@@ -1,0 +1,341 @@
+/* ==========================================================
+   Entre Nous — design system
+   Palette relevée directement sur le logo :
+   crème, framboise profond, rose poudré, doré.
+   ========================================================== */
+
+:root {
+  --creme:        #FBF2DC;
+  --creme-fonce:  #F4E6C8;
+  --framboise:    #A81B4C;
+  --framboise-2:  #C8325F;
+  --rose:         #E8647F;
+  --rose-pale:    #F7C9CE;
+  --rose-voile:   #FCE8EA;
+  --dore:         #F0C063;
+  --encre:        #5A1230;
+  --encre-doux:   #8A5068;
+  --blanc:        #FFFDF8;
+
+  --serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --sans:  'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  --r-s:  10px;
+  --r-m:  18px;
+  --r-l:  28px;
+
+  --ombre-douce: 0 2px 10px rgba(168, 27, 76, .07);
+  --ombre-carte: 0 6px 28px rgba(168, 27, 76, .11);
+  --ombre-haute: 0 14px 44px rgba(168, 27, 76, .16);
+
+  --max: 1080px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--creme);
+  color: var(--encre);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* Grain papier très léger, pour l'effet papeterie du logo */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: .5;
+  background-image: radial-gradient(var(--creme-fonce) .5px, transparent .5px);
+  background-size: 14px 14px;
+}
+
+/* ---------- Typographie ---------- */
+h1, h2, h3, h4 {
+  font-family: var(--serif);
+  font-weight: 600;
+  line-height: 1.18;
+  color: var(--framboise);
+  letter-spacing: -.01em;
+}
+h1 { font-size: clamp(2rem, 5vw, 3.1rem); }
+h2 { font-size: clamp(1.4rem, 3vw, 2rem); }
+h3 { font-size: 1.18rem; }
+
+a { color: var(--framboise); }
+
+.surtitre {
+  font-family: var(--sans);
+  font-size: .74rem;
+  font-weight: 800;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--rose);
+}
+
+.discret { color: var(--encre-doux); font-size: .9rem; }
+
+/* ---------- Mise en page ---------- */
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 28px 22px 90px;
+}
+.etroit { max-width: 620px; }
+
+.pile    { display: flex; flex-direction: column; gap: 18px; }
+.rangee  { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.espace  { justify-content: space-between; }
+.grille  { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+
+/* ---------- En-tête ---------- */
+.entete {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 18px 22px;
+}
+.marque { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+.marque img { width: 46px; height: 46px; object-fit: contain; }
+.marque span {
+  font-family: var(--serif);
+  font-size: 1.32rem;
+  font-weight: 600;
+  color: var(--framboise);
+}
+
+/* ---------- Boutons ---------- */
+.btn {
+  font-family: var(--sans);
+  font-size: .95rem;
+  font-weight: 700;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--framboise);
+  color: var(--creme);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform .14s ease, box-shadow .14s ease, background .14s ease;
+  box-shadow: var(--ombre-douce);
+}
+.btn:hover:not(:disabled) { background: var(--framboise-2); transform: translateY(-1px); box-shadow: var(--ombre-carte); }
+.btn:active:not(:disabled) { transform: translateY(0); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn.doux  { background: var(--rose-voile); color: var(--framboise); box-shadow: none; }
+.btn.doux:hover:not(:disabled) { background: var(--rose-pale); }
+.btn.fil   { background: transparent; color: var(--framboise); border: 1.5px solid var(--rose-pale); box-shadow: none; }
+.btn.fil:hover:not(:disabled) { background: var(--rose-voile); border-color: var(--rose); }
+.btn.petit { padding: 8px 16px; font-size: .85rem; }
+.btn.large { width: 100%; padding: 15px 24px; font-size: 1.02rem; }
+
+/* ---------- Cartes ---------- */
+.carte {
+  background: var(--blanc);
+  border: 1px solid var(--creme-fonce);
+  border-radius: var(--r-l);
+  padding: 26px;
+  box-shadow: var(--ombre-douce);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.carte.cliquable { cursor: pointer; }
+.carte.cliquable:hover { transform: translateY(-3px); box-shadow: var(--ombre-carte); }
+
+/* Carte de groupe : ruban doré rappelant le nœud du logo */
+.carte-groupe { position: relative; overflow: hidden; }
+.carte-groupe::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  background: var(--dore);
+  opacity: .14;
+}
+.carte-groupe .emoji { font-size: 2rem; display: block; margin-bottom: 8px; }
+
+/* ---------- Formulaires ---------- */
+label.champ { display: block; margin-bottom: 20px; }
+label.champ > .intitule {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.06rem;
+  font-weight: 600;
+  color: var(--framboise);
+  margin-bottom: 4px;
+}
+label.champ > .aide {
+  display: block;
+  font-size: .85rem;
+  color: var(--encre-doux);
+  margin-bottom: 9px;
+}
+
+input[type=text], input[type=email], input[type=url], textarea, select {
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 1rem;
+  color: var(--encre);
+  background: var(--blanc);
+  border: 1.5px solid var(--creme-fonce);
+  border-radius: var(--r-m);
+  padding: 13px 16px;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--rose);
+  box-shadow: 0 0 0 3px var(--rose-voile);
+}
+textarea { min-height: 112px; resize: vertical; line-height: 1.6; }
+::placeholder { color: #C6A8B4; }
+
+/* ---------- Dépôt de photos ---------- */
+.depot {
+  border: 2px dashed var(--rose-pale);
+  border-radius: var(--r-m);
+  padding: 26px;
+  text-align: center;
+  background: var(--rose-voile);
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.depot:hover, .depot.survol { border-color: var(--rose); background: #FBDDE1; }
+.depot input { display: none; }
+
+.vignettes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.vignette {
+  position: relative;
+  width: 88px; height: 88px;
+  border-radius: var(--r-s);
+  overflow: hidden;
+  border: 1px solid var(--creme-fonce);
+  background: var(--creme-fonce);
+}
+.vignette img, .vignette video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vignette button {
+  position: absolute; top: 3px; right: 3px;
+  width: 22px; height: 22px;
+  border: none; border-radius: 50%;
+  background: rgba(90,18,48,.78);
+  color: #fff; font-size: .8rem; line-height: 1;
+  cursor: pointer;
+}
+
+/* ---------- Étiquettes ---------- */
+.etiquette {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .75rem; font-weight: 800;
+  letter-spacing: .05em; text-transform: uppercase;
+  padding: 5px 12px; border-radius: 999px;
+  background: var(--rose-voile); color: var(--framboise);
+}
+.etiquette.ouverte { background: #FBEFD4; color: #966B0E; }
+.etiquette.publiee { background: #E4F3E6; color: #2E6B3C; }
+.etiquette.faite   { background: var(--rose-voile); color: var(--framboise); }
+
+/* ---------- Le magazine ---------- */
+.couverture {
+  text-align: center;
+  padding: 54px 26px 46px;
+  background: linear-gradient(170deg, var(--rose-voile), var(--creme));
+  border: 1px solid var(--creme-fonce);
+  border-radius: var(--r-l);
+  margin-bottom: 36px;
+  position: relative;
+  overflow: hidden;
+}
+.couverture img.logo { width: 92px; margin-bottom: 14px; }
+.couverture .numero {
+  font-family: var(--sans);
+  font-size: .8rem; font-weight: 800;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: var(--rose);
+}
+.couverture h1 { margin: 6px 0 4px; }
+.couverture .mois { font-family: var(--serif); font-style: italic; color: var(--encre-doux); font-size: 1.1rem; }
+
+.article {
+  background: var(--blanc);
+  border: 1px solid var(--creme-fonce);
+  border-radius: var(--r-l);
+  padding: 30px;
+  margin-bottom: 26px;
+  box-shadow: var(--ombre-douce);
+}
+.article > .signature {
+  display: flex; align-items: center; gap: 12px;
+  padding-bottom: 16px; margin-bottom: 20px;
+  border-bottom: 1px solid var(--creme-fonce);
+}
+.pastille {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--rose-pale); color: var(--framboise);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-size: 1.14rem; font-weight: 700;
+  flex-shrink: 0;
+}
+.rubrique { margin-bottom: 18px; }
+.rubrique .intitule {
+  font-family: var(--sans);
+  font-size: .72rem; font-weight: 800;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--rose); margin-bottom: 3px;
+}
+.rubrique p { white-space: pre-wrap; }
+
+.galerie { display: grid; gap: 9px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); margin-top: 14px; }
+.galerie img, .galerie video {
+  width: 100%; aspect-ratio: 1; object-fit: cover;
+  border-radius: var(--r-s); border: 1px solid var(--creme-fonce);
+}
+
+/* ---------- Divers ---------- */
+.vide { text-align: center; padding: 56px 22px; color: var(--encre-doux); }
+.vide .emoji { font-size: 2.6rem; display: block; margin-bottom: 12px; }
+
+.message { padding: 13px 17px; border-radius: var(--r-m); font-size: .93rem; margin-bottom: 16px; }
+.message.ok     { background: #E4F3E6; color: #2E6B3C; }
+.message.erreur { background: #FBE2E2; color: #96333B; }
+.message.info   { background: var(--rose-voile); color: var(--framboise); }
+
+.chargement { text-align: center; padding: 70px 20px; color: var(--encre-doux); }
+.tourne {
+  width: 30px; height: 30px; margin: 0 auto 14px;
+  border: 3px solid var(--rose-pale); border-top-color: var(--framboise);
+  border-radius: 50%; animation: tourner .8s linear infinite;
+}
+@keyframes tourner { to { transform: rotate(360deg); } }
+
+.separateur { text-align: center; color: var(--dore); font-size: 1.2rem; letter-spacing: .5em; margin: 30px 0; }
+
+.cache { display: none !important; }
+
+@media (max-width: 600px) {
+  .page { padding: 20px 16px 80px; }
+  .carte, .article { padding: 20px; }
+  .entete { padding: 14px 16px; }
+}
+
+@media print {
+  body::before, .entete, .btn, .no-print { display: none !important; }
+  .article, .couverture { box-shadow: none; break-inside: avoid; }
+}
