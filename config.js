@@ -6,8 +6,8 @@
 //    La clé "anon" est publique par conception : elle peut
 //    rester dans le code, la sécurité est assurée par les
 //    règles RLS du fichier schema.sql.
-export const SUPABASE_URL      = 'https://TON-PROJET.supabase.co';
-export const SUPABASE_ANON_KEY = 'TA-CLE-ANON';
+export const SUPABASE_URL      = 'https://pwzdgeiewkbuicaoxkfv.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable_OQjM5gEsQfHyCPxDMEPw_g_b3y-ryov';
 
 // 2. Le nom de ta newsletter.
 export const NOM_DU_SITE = 'Entre Nous';

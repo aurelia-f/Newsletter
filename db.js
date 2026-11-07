@@ -4,7 +4,13 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 import { SUPABASE_URL, SUPABASE_ANON_KEY, RUBRIQUES, QUESTIONS_TOURNANTES } from './config.js';
 
-export const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Toutes les tables de cette appli vivent dans le schéma `newsletter`,
+// ce qui permet d'héberger d'autres applis dans le même projet Supabase.
+// À faire une fois côté Supabase : Settings > Data API > Exposed schemas,
+// ajouter `newsletter` à la liste.
+export const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  db: { schema: 'newsletter' },
+});
 
 export function configOk() {
   return !SUPABASE_URL.includes('TON-PROJET') && !SUPABASE_ANON_KEY.includes('TA-CLE');
@@ -213,10 +219,10 @@ export async function envoyerMedia(fichier) {
   const ext = (fichier.name.split('.').pop() || 'bin').toLowerCase();
   const chemin = `${session.user.id}/${crypto.randomUUID()}.${ext}`;
   const { error } = await sb.storage
-    .from('medias')
+    .from('medias-newsletter')
     .upload(chemin, fichier, { cacheControl: '31536000', upsert: false });
   if (error) throw error;
-  const { data } = sb.storage.from('medias').getPublicUrl(chemin);
+  const { data } = sb.storage.from('medias-newsletter').getPublicUrl(chemin);
   return {
     chemin,
     url: data.publicUrl,
