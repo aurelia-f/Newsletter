@@ -14,6 +14,9 @@ create table if not exists profiles (
   email       text not null unique,
   prenom      text,
   avatar_url  text,
+  date_naissance date,
+  bio         text,
+  ville       text,
   cree_le     timestamptz not null default now()
 );
 
@@ -281,19 +284,19 @@ create policy "modifier sa reponse" on reponses
 --  STOCKAGE DES PHOTOS ET VIDÉOS
 -- ============================================================
 insert into storage.buckets (id, name, public)
-values ('medias', 'medias', true)
+values ('medias-newsletter', 'medias-newsletter', true)
 on conflict (id) do nothing;
 
 drop policy if exists "envoyer ses medias" on storage.objects;
 create policy "envoyer ses medias" on storage.objects
   for insert to authenticated
-  with check (bucket_id = 'medias' and (storage.foldername(name))[1] = auth.uid()::text);
+  with check (bucket_id = 'medias-newsletter' and (storage.foldername(name))[1] = auth.uid()::text);
 
 drop policy if exists "supprimer ses medias" on storage.objects;
 create policy "supprimer ses medias" on storage.objects
   for delete to authenticated
-  using (bucket_id = 'medias' and (storage.foldername(name))[1] = auth.uid()::text);
+  using (bucket_id = 'medias-newsletter' and (storage.foldername(name))[1] = auth.uid()::text);
 
 drop policy if exists "lire les medias" on storage.objects;
 create policy "lire les medias" on storage.objects
-  for select using (bucket_id = 'medias');
+  for select using (bucket_id = 'medias-newsletter');
