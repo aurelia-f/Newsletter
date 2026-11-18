@@ -128,6 +128,7 @@ async function afficher() {
   brancherExpress();
   brancherFormats();
   brancherPhotos();
+  brancherPortraits();
   brancherEnregistrement();
   brancherEnvoi();
   brancherPoserQuestion();
@@ -378,6 +379,19 @@ function champ(q, contenu) {
           <p class="discret">ou glisse-les ici</p>
         </div>
         <div class="vignettes" id="vignettes"></div>`);
+
+    case 'portrait':
+      return bloc(`
+        <input type="hidden" name="${txt(q.cle)}" value="${txt(v ?? '')}">
+        <div class="depot depot-portrait" data-portrait="${txt(q.cle)}">
+          <input type="file" accept="image/*" hidden>
+          <strong>Choisir ma photo de couverture</strong>
+          <p class="discret">une seule, de préférence en portrait</p>
+        </div>
+        <div class="vignettes" data-apercu="${txt(q.cle)}">${v ? `
+          <div class="vignette"><img src="${txt(v)}" alt="">
+            <button type="button" data-oter="${txt(q.cle)}" title="Retirer">×</button>
+          </div>` : ''}</div>`);
 
     case 'musique':
       return bloc(`
@@ -846,6 +860,55 @@ function brancherPhotos() {
   ['dragleave', 'drop'].forEach(ev =>
     depot.addEventListener(ev, e => { e.preventDefault(); depot.classList.remove('survol'); }));
   depot.addEventListener('drop', e => ajouter([...e.dataTransfer.files]));
+}
+
+/* ==========================================================
+   La photo de couverture : une seule, à part des autres
+   ========================================================== */
+function brancherPortraits() {
+  vue.querySelectorAll('[data-portrait]').forEach(depot => {
+    const cle = depot.dataset.portrait;
+    const fichier = depot.querySelector('input[type=file]');
+    const cache = vue.querySelector(`input[type=hidden][name="${cssEchappe(cle)}"]`);
+    const apercu = vue.querySelector(`[data-apercu="${cssEchappe(cle)}"]`);
+
+    const dessiner = url => {
+      apercu.innerHTML = url
+        ? `<div class="vignette"><img src="${txt(url)}" alt="">
+             <button type="button" data-oter="${txt(cle)}" title="Retirer">×</button>
+           </div>`
+        : '';
+      apercu.querySelector('[data-oter]')?.addEventListener('click', () => {
+        cache.value = '';
+        dessiner('');
+        planifierEnregistrement();
+      });
+    };
+    dessiner(cache.value);
+
+    depot.addEventListener('click', e => {
+      if (e.target.closest('[data-oter]')) return;
+      fichier.click();
+    });
+
+    fichier.addEventListener('change', async () => {
+      const f = fichier.files[0];
+      if (!f) return;
+      if (f.size > 50 * 1024 * 1024) {
+        return alerte($('#retour'), 'erreur', `${f.name} dépasse 50 Mo.`);
+      }
+      apercu.innerHTML = '<div class="vignette"><div class="tourne" style="margin:28px auto"></div></div>';
+      try {
+        const media = await envoyerMedia(f);
+        cache.value = media.url;
+        dessiner(media.url);
+        planifierEnregistrement();
+      } catch (err) {
+        dessiner(cache.value);
+        alerte($('#retour'), 'erreur', 'Envoi impossible : ' + err.message);
+      }
+    });
+  });
 }
 
 /* ==========================================================

@@ -5,6 +5,7 @@
 //  bougent jamais.
 // ==========================================================
 import { enregistrerMiseEnPage } from './db.js';
+import { ajusterPages } from './ajuster.js';
 
 const LARGEURS = [
   { n: 2, libelle: '⅓' },
@@ -35,6 +36,7 @@ export function ouvrirEditeur(article, reponseId, auRetour) {
   if (!corps.classList.contains('jr-grille')) enGrille(corps);
 
   corps.querySelectorAll('.jr-case').forEach(preparer);
+  ajusterPages(page.parentElement);
   corps.addEventListener('dragover', surVolSurvol);
   page.addEventListener('click', surClicAilleurs);
 
@@ -118,7 +120,10 @@ function preparer(boite) {
     // Firefox exige qu'on écrive quelque chose.
     e.dataTransfer.setData('text/plain', boite.dataset.bloc);
   });
-  boite.addEventListener('dragend', () => boite.classList.remove('jr-vol'));
+  boite.addEventListener('dragend', () => {
+    boite.classList.remove('jr-vol');
+    ajusterPages(page?.parentElement);
+  });
 }
 
 function surVolSurvol(e) {
@@ -182,6 +187,7 @@ function construireBarre(reponseId) {
       if (!choisi) return;
       choisi.dataset.large = b.dataset.large;
       choisi.style.gridColumn = 'span ' + b.dataset.large;
+      ajusterPages(page?.parentElement);
       majBarre();
     }));
 

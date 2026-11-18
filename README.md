@@ -98,6 +98,7 @@ Partagé par toutes les pages :
 | `migration-10.sql` | La couleur du numéro : la première qui choisit décide |
 | `migration-11.sql` | Chacune range sa page comme elle veut |
 | `editeur.js` | Le rangement des blocs : glisser-déposer et largeurs |
+| `ajuster.js` | Force le A4 : réduit le contenu qui déborde au lieu de le couper |
 | `logo-journal.png` | Le logo en noir et blanc, sur fond transparent, pour l'en-tête du journal |
 | `journal.js` | **Le rendu journal** : les cinq gabarits, l'en-tête et le pied verrouillés |
 | `apercu-journal.html` | Page de travail pour regarder les cinq gabarits côte à côte |
@@ -346,6 +347,18 @@ Deux copines côte à côte n'ont jamais le même, et le gabarit tourne
 d'un mois à l'autre (il dépend du numéro d'édition). Pour les regarder
 tous les cinq d'un coup, avec de fausses réponses : `apercu-journal.html`.
 
+### Les deux photos
+Le questionnaire demande une photo **au début** et une **à la fin** :
+
+- **Ta photo du mois**, en premier : c'est la grande photo de ta page.
+  Les suivantes se rangent dans la galerie en bas.
+- **Ta photo pour la page de garde**, en tout dernier : c'est celle de
+  la une. Si tu n'en mets pas, on prend ta photo de profil.
+
+La photo de couverture n'est pas un média comme les autres : elle est
+rangée dans `contenu.photo_garde`, pour qu'elle ne se mélange pas à la
+galerie.
+
 ### Ranger sa page
 Sous sa propre page, et seulement la sienne, chacune a un bouton
 **Ranger ma page comme je veux**. La feuille passe alors en grille de
@@ -360,12 +373,25 @@ revient en arrière.
 Si une question arrive après coup, son bloc se glisse à la fin sans
 casser le rangement.
 
-### Le PDF
-Le bouton **Enregistrer en PDF** sort exactement ce qui est à l'écran,
-en **A4**, une personne par feuille, sans les boutons ni les réactions.
-Dans la fenêtre d'impression, laisse les marges sur « aucune » et coche
-les graphismes d'arrière-plan : c'est déjà prévu dans la feuille de
-style, mais certains navigateurs demandent confirmation.
+### Le PDF, et pourquoi tout tient sur une page
+Une feuille fait **exactement un A4** : 794 × 1123 points, à l'écran
+comme à l'impression. Pas de page qui déborde sur une deuxième.
+
+Quand quelqu'un écrit beaucoup, `ajuster.js` mesure le corps de la
+page et le **réduit** jusqu'à ce qu'il rentre, en deux passes pour
+rattraper ce que le retour à la ligne a changé. Le plancher est à 45 %
+de la taille : en dessous, ce serait illisible. L'en-tête et le pied
+ne sont jamais réduits.
+
+Le calcul est refait quand les images finissent de charger, quand les
+polices arrivent, quand on redimensionne la fenêtre, quand on range sa
+page, et juste avant d'imprimer.
+
+Dans la fenêtre d'impression : marges sur « aucune », et coche les
+graphismes d'arrière-plan si le navigateur le demande.
+
+Sur téléphone, la feuille est mise à l'échelle **en entier** plutôt
+que dépliée : on voit un petit A4, pas une page web différente.
 
 ### La couleur du numéro
 Trois rendus : **noir et blanc**, **une seule couleur**, **couleur**.

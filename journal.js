@@ -42,9 +42,11 @@ export function pageJournal(r, ed, index, membres, posees, pied) {
 
   return `<article class="jr-page ${classe}" data-reponse="${txt(r.id)}"
                    data-auteure="${txt(r.profile_id || '')}">
-    ${enTete(ed, nom)}
-    ${corps}
-    ${piedDePage(ed, pied)}
+    <div class="jr-fit">
+      ${enTete(ed, nom)}
+      ${corps}
+      ${piedDePage(ed, pied)}
+    </div>
   </article>`;
 }
 
@@ -150,7 +152,7 @@ function decouper(r, ed, posees, nom) {
   const citation = motFort ? `<blockquote class="jr-citation">${txt(motFort)}</blockquote>` : '';
 
   // Les rubriques, sauf celles déjà servies plus haut.
-  const servies = new Set(['resume', 'photos']);
+  const servies = new Set(['resume', 'photos', 'photo_garde']);
   const blocs = (ed.questions || [])
     .filter(q => !servies.has(q.id))
     .map(q => ({ id: q.id, html: bloc(q, r) }))
@@ -240,9 +242,11 @@ function bloc(q, r) {
 export function uneDuNumero(ed, reponses, membres) {
   const portraits = reponses.map(r => {
     const nom = r.auteure?.prenom || 'Une copine';
-    // Sur la une, c'est la photo de profil qui compte : ainsi la photo
-    // du mois garde sa surprise pour la page de la personne.
-    const img = r.auteure?.avatar_url
+    // Sur la une : la photo de couverture si elle en a choisi une,
+    // sinon sa photo de profil. La photo du mois, elle, garde sa
+    // surprise pour sa page à elle.
+    const img = r.contenu?.photo_garde
+             || r.auteure?.avatar_url
              || (r.medias || []).find(m => m.type !== 'video')?.url;
     return `<figure class="jr-portrait">
       ${img ? `<img src="${txt(img)}" alt="" loading="lazy">`
@@ -254,6 +258,7 @@ export function uneDuNumero(ed, reponses, membres) {
   const sommaire = reponses.map(r => txt(r.auteure?.prenom || 'Une copine')).join(' · ');
 
   return `<article class="jr-page jr-une">
+    <div class="jr-fit">
     <div class="jr-tete">
       <div class="jr-ligne-haute">
         <span>${txt(moisEnLettres(ed.mois))}</span>
@@ -277,5 +282,46 @@ export function uneDuNumero(ed, reponses, membres) {
       <span>${txt(sommaire)}</span>
       <span>Édition numéro ${txt(ed.numero)}</span>
     </div>
+    </div>
   </article>`;
+}
+
+/* ==========================================================
+   TENIR SUR UNE SEULE FEUILLE
+   La feuille fait exactement un A4. Si le contenu dépasse, on le
+   réduit jusqu'à ce qu'il rentre — jamais de page coupée en deux.
+   ========================================================== */
+export function ajusterPages(racine = document) {
+  for (const page of racine.querySelectorAll('.jr-page')) {
+    const fit = page.querySelector(':scope > .jr-fit');
+    if (!fit) continue;
+
+    // On remet à l'échelle 1 pour mesurer la hauteur réelle.
+    fit.style.transform = 'none';
+    fit.style.width = '100%';
+
+    const dispo = page.clientHeight;
+    const haut  = fit.scrollHeight;
+    if (!dispo || !haut) continue;
+
+    // 0.55 : en dessous, le texte serait illisible ; mieux vaut
+    // alors laisser déborder que rendre la page inutilisable.
+    const k = Math.min(1, Math.max(0.55, dispo / haut));
+    if (k >= 0.999) { fit.style.removeProperty('transform'); return; }
+
+    fit.style.transform = `scale(${k})`;
+    fit.style.width = (100 / k) + '%';
+  }
+}
+
+/** Les photos faussent la mesure tant qu'elles ne sont pas chargées. */
+export async function ajusterQuandPret(racine = document) {
+  ajusterPages(racine);
+  const images = [...racine.querySelectorAll('.jr-page img')];
+  await Promise.all(images.map(img => img.complete
+    ? Promise.resolve()
+    : new Promise(ok => { img.addEventListener('load', ok, { once: true });
+                          img.addEventListener('error', ok, { once: true }); })));
+  if (document.fonts?.ready) { try { await document.fonts.ready; } catch {} }
+  ajusterPages(racine);
 }

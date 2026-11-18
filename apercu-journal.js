@@ -3,6 +3,7 @@
 //  Rien n'est enregistré : c'est une page de travail.
 // ==========================================================
 import { pageJournal, uneDuNumero, GABARITS } from './journal.js';
+import { surveillerPages, adapterALEcran } from './ajuster.js';
 
 /* Des images factices, dessinées en SVG : aucune vraie photo. */
 function faussePhoto(graine, large) {
@@ -89,6 +90,11 @@ journal.innerHTML = uneDuNumero(ed, reponses, [])
                 gabarit « ${GABARITS[(i + 3) % GABARITS.length]} »
               </p>` + page;
     }).join('');
+
+/* Chaque feuille est un A4 : ce qui déborde est réduit. */
+adapterALEcran(journal);
+surveillerPages(journal);
+window.addEventListener('resize', () => adapterALEcran(journal));
 
 /* Les trois rendus */
 const teinte = document.getElementById('teinte');

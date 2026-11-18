@@ -27,6 +27,7 @@ export const BASELINE = 'Les nouvelles de nos vies, une fois par mois.';
 //    'emojis'  → jusqu'à trois emojis
 //    'musique' → titre + lien Spotify / YouTube
 //    'photos'  → photos et vidéos
+//    'portrait'→ une seule photo, pour la page de garde
 //
 //  `express: true` → la question fait partie du mode « 5 minutes ».
 //
@@ -34,6 +35,13 @@ export const BASELINE = 'Les nouvelles de nos vies, une fois par mois.';
 //  réservé aux filles, donc aucune question ne suppose le genre de
 //  la personne qui répond.
 export const RUBRIQUES = [
+  // La première question du mois : la photo qui fera ta page.
+  { id: 'photos', type: 'photos', express: true,
+    intitule: 'Ta photo du mois',
+    aide: 'La première servira de grande photo sur ta page. '
+        + 'Les suivantes se rangeront en bas : les bébés, les chats, '
+        + 'les voyages, le brunch raté.' },
+
   { id: 'humeur', type: 'qcm', express: true,
     intitule: 'Alors, comment ça va vraiment ?',
     choix: ['Au top', 'Ça va bien', 'Tranquille', 'Je survis', 'Mois difficile', 'Ne me demande pas'] },
@@ -84,11 +92,13 @@ export const RUBRIQUES = [
   { id: 'note_mois', type: 'note',
     intitule: 'Mon mois, sur cinq étoiles' },
 
-  { id: 'photos', type: 'photos', express: true,
-    intitule: 'Mon mois en photos',
-    aide: 'Les bébés, les chats, les voyages, le brunch raté.' },
-
   { id: 'suite', type: 'court', intitule: 'Le mois prochain, j\'ai hâte de…' },
+
+  // La toute dernière question : la photo de la couverture.
+  { id: 'photo_garde', type: 'portrait',
+    intitule: 'Ta photo pour la page de garde',
+    aide: 'Celle qui te représentera sur la une du numéro. '
+        + 'Si tu n\'en mets pas, on prendra ta photo de profil.' },
 ];
 
 // ==========================================================

@@ -964,7 +964,11 @@ body.sans-defilement { overflow: hidden; }
 
 /* ---------- La feuille ---------- */
 .jr-page {
-  width: min(794px, 100%);
+  /* Un A4 exact : 210 × 297 mm, soit 794 × 1123 points d'écran.
+     Ce qu'on voit ici est ce qui sortira en PDF. */
+  width: 794px;
+  height: 1123px;
+  overflow: hidden;
   background: var(--jr-papier);
   color: var(--jr-encre);
   font-family: var(--jr-corps);
@@ -978,6 +982,7 @@ body.sans-defilement { overflow: hidden; }
   background-image: radial-gradient(rgba(0, 0, 0, .025) 1px, transparent 1px);
   background-size: 3px 3px;
   break-inside: avoid;
+  flex: none;
 }
 .jr-page::after {
   content: '';
@@ -1043,7 +1048,12 @@ body.sans-defilement { overflow: hidden; }
 }
 
 /* ---------- Corps : le commun à tous les gabarits ---------- */
-.jr-corps { padding: 16px 6px 18px; flex: 1; }
+.jr-corps {
+  padding: 16px 6px 18px;
+  flex: 1;
+  min-height: 0;
+  /* zoom est posé par ajuster.js quand le contenu déborde */
+}
 
 .jr-photo { margin: 0 0 12px; }
 .jr-photo img {
@@ -1300,21 +1310,25 @@ body.sans-defilement { overflow: hidden; }
 }
 
 /* ---------- Téléphone : on déplie tout en une colonne ---------- */
+/* La feuille garde ses proportions : on la met à l'échelle en entier. */
+.journal.jr-reduit { --jr-echelle: 1; }
+.journal.jr-reduit .jr-page,
+.journal.jr-reduit .jr-sous-page,
+.journal.jr-reduit .jr-reactions {
+  transform: scale(var(--jr-echelle));
+  transform-origin: top left;
+  margin-bottom: calc((var(--jr-echelle) - 1) * 1123px + 26px);
+}
+.journal.jr-reduit .jr-sous-page,
+.journal.jr-reduit .jr-reactions {
+  margin-bottom: calc((var(--jr-echelle) - 1) * 100% + 10px);
+}
+
+@media (max-width: 860px) {
+  .journal { align-items: flex-start; }
+}
+
 @media (max-width: 760px) {
-  .jr-page { padding: 16px 14px 0; font-size: 15px; }
-  .g-classique .jr-corps,
-  .g-retro .jr-corps { grid-template-columns: 1fr; }
-  .g-classique .jr-photo,
-  .g-retro .jr-photo { grid-column: 1; grid-row: 1; }
-  .g-classique .jr-flot,
-  .g-retro .jr-flot  { grid-column: 1; grid-row: 2; }
-  .g-edit .jr-flot,
-  .g-lettrine .jr-flot,
-  .g-urbain .jr-flot { columns: 1; }
-  .g-edit .jr-photo  { float: none; width: 100%; margin: 0 0 12px; }
-  .jr-galerie { grid-template-columns: repeat(2, 1fr); }
-  .jr-grille  { grid-template-columns: repeat(2, 1fr); }
-  .jr-grille .jr-case { grid-column: span 2 !important; }
   .jr-barre { bottom: 8px; padding: 8px 10px; }
   .jr-barre-aide { display: none; }
 }
@@ -1411,28 +1425,21 @@ body.sans-defilement { overflow: hidden; }
   /* Les couleurs et les aplats doivent sortir à l'impression. */
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
+  /* Rien ne change : la feuille est déjà un A4. On retire juste
+     l'ombre, et on force la coupure après chaque page. */
+  .journal.jr-reduit .jr-page { transform: none; margin-bottom: 0; }
   .jr-page {
-    width: 210mm;
-    min-height: 297mm;
+    width: 794px;
+    height: 1123px;
     margin: 0;
-    padding: 12mm 13mm 0;
     box-shadow: none;
+    overflow: hidden;
     page-break-after: always;
     break-after: page;
-    display: flex;
-    flex-direction: column;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
   .jr-page:last-of-type { page-break-after: auto; break-after: auto; }
-  .jr-page::after { inset: 6mm; }
 
-  .jr-corps { flex: 1; }
-  .jr-manchette { font-size: 44pt; }
-  .jr-personne  { font-size: 16pt; }
-  .jr-page      { font-size: 10.5pt; }
-  .jr-chapeau   { font-size: 11.5pt; }
-  .jr-titre-bloc{ font-size: 11pt; }
-  .jr-pied      { font-size: 9pt; }
-  .jr-galerie img, .jr-galerie video { max-height: 38mm; }
-  .jr-photo img { max-height: 95mm; }
   img, .jr-bloc, .jr-case, .jr-citation { break-inside: avoid; }
 }

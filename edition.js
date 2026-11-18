@@ -12,6 +12,7 @@ import { EMOJIS_REACTION } from './config.js';
 import { $, txt, moisEnLettres, messageVide, initiale } from './ui.js';
 import { pageJournal, uneDuNumero } from './journal.js';
 import { ouvrirEditeur, fermerEditeur } from './editeur.js';
+import { surveillerPages, adapterALEcran, ajusterPages } from './ajuster.js';
 
 const vue = $('#vue');
 const editionId = new URLSearchParams(location.search).get('id');
@@ -71,10 +72,19 @@ async function afficher() {
       </div>
     </div>`;
 
-  $('#btn-pdf').addEventListener('click', () => window.print());
+  $('#btn-pdf').addEventListener('click', () => {
+    ajusterPages($('#journal'));
+    window.print();
+  });
   brancherRendu(ed);
   brancherRangement();
   brancherReactions();
+
+  // Chaque page est un A4 : ce qui déborde est réduit, pas coupé.
+  const journal = $('#journal');
+  adapterALEcran(journal);
+  surveillerPages(journal);
+  window.addEventListener('resize', () => adapterALEcran(journal));
 }
 
 /* ==========================================================
