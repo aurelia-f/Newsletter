@@ -21,6 +21,10 @@ let mois = null;              // le mois en cours de remplissage
 let moisDisponibles = [];
 let editionsDuMois = [];      // les éditions ouvertes de ce mois
 let mesGroupesListe = [];
+
+// Le groupe d'où l'on vient, s'il y en a un : le bouton de retour y
+// ramène, plutôt que de renvoyer à la liste de tous les groupes.
+const venantDe = new URLSearchParams(location.search).get('de');
 let questions = [];           // les questions fusionnées, affichées
 let medias = [];
 let brouillon = null;
@@ -91,7 +95,7 @@ async function afficher() {
 
   vue.innerHTML = `
     <div class="page etroit">
-      <a href="groupes.html" class="discret">← Mes groupes</a>
+      ${lienRetour(mesGroupesListe)}
       <div class="couverture" style="padding:34px 24px">
         <span class="numero">Le questionnaire du mois</span>
         <h1>${txt(moisEnLettres(mois))}</h1>
@@ -133,7 +137,7 @@ async function afficher() {
 function afficherAucuneEdition(groupes) {
   vue.innerHTML = `
     <div class="page etroit">
-      <a href="groupes.html" class="discret">← Mes groupes</a>
+      ${lienRetour(groupes)}
       <div class="couverture" style="padding:34px 24px">
         <span class="numero">Le questionnaire du mois</span>
         <h1>${txt(moisEnLettres(mois))}</h1>
@@ -328,8 +332,20 @@ function selecteurDeMois() {
 
 function brancherSelecteurMois() {
   $('#choix-mois-form')?.addEventListener('change', e => {
-    location.href = 'repondre.html?mois=' + encodeURIComponent(e.target.value);
+    location.href = 'repondre.html?mois=' + encodeURIComponent(e.target.value)
+      + (venantDe ? '&de=' + encodeURIComponent(venantDe) : '');
   });
+}
+
+/**
+ * Le bouton de retour. Si on est arrivée depuis un groupe, il y
+ * ramène, et pas à la liste de tous les groupes.
+ */
+function lienRetour(groupes) {
+  const g = venantDe && (groupes || []).find(x => (x.id || x.groupe_id) === venantDe);
+  if (!g) return '<a href="groupes.html" class="lien-retour">Mes groupes</a>';
+  const nom = g.nom || g.groupe?.nom || 'mon groupe';
+  return `<a href="groupe.html?id=${encodeURIComponent(venantDe)}" class="lien-retour">${txt(nom)}</a>`;
 }
 
 /* ==========================================================

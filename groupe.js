@@ -64,7 +64,8 @@ async function afficher() {
         // depuis le questionnaire commun, pas groupe par groupe.
         const lien = publiee
           ? 'edition.html?id=' + encodeURIComponent(ed.id)
-          : 'repondre.html?mois=' + encodeURIComponent(ed.mois);
+          : 'repondre.html?mois=' + encodeURIComponent(ed.mois)
+              + '&de=' + encodeURIComponent(ed.groupe_id);
         return `<a class="carte cliquable" href="${lien}"
                    style="text-decoration:none;display:block;margin-bottom:14px">
           <div class="rangee espace">
@@ -148,7 +149,7 @@ async function afficher() {
 
   vue.innerHTML = `
     <div class="page">
-      <a href="groupes.html" class="discret">← Tous mes groupes</a>
+      <a href="groupes.html" class="lien-retour">Tous mes groupes</a>
       <h1 style="margin:10px 0 8px">${txt(groupe.emoji)} ${txt(groupe.nom)}</h1>
       <p class="discret" style="margin-bottom:24px">
         ${estAdmin

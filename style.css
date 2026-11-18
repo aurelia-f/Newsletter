@@ -896,6 +896,42 @@ body.sans-defilement { overflow: hidden; }
   .article, .couverture { box-shadow: none; break-inside: avoid; }
 }
 
+/* ---------- Le bouton de retour ---------- */
+.lien-retour {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 8px 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--rose-pale);
+  border-radius: 999px;
+  background: var(--blanc);
+  color: var(--encre);
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: .9rem;
+  text-decoration: none;
+  box-shadow: var(--ombre-douce);
+  transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.lien-retour::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  flex: none;
+  background: currentColor;
+  -webkit-mask: no-repeat center / 16px url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M15 5l-7 7 7 7'/></svg>");
+  mask: no-repeat center / 16px url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M15 5l-7 7 7 7'/></svg>");
+  transition: transform .15s ease;
+}
+.lien-retour:hover {
+  border-color: var(--rose);
+  box-shadow: var(--ombre-carte);
+  transform: translateY(-1px);
+}
+.lien-retour:hover::before { transform: translateX(-3px); }
+.lien-retour:active { transform: translateY(0); }
+
 /* ==========================================================
    LE JOURNAL · rendu « vrai newspaper »
    Une page par personne, en-tête et pied verrouillés.
@@ -1277,17 +1313,126 @@ body.sans-defilement { overflow: hidden; }
   .g-urbain .jr-flot { columns: 1; }
   .g-edit .jr-photo  { float: none; width: 100%; margin: 0 0 12px; }
   .jr-galerie { grid-template-columns: repeat(2, 1fr); }
+  .jr-grille  { grid-template-columns: repeat(2, 1fr); }
+  .jr-grille .jr-case { grid-column: span 2 !important; }
+  .jr-barre { bottom: 8px; padding: 8px 10px; }
+  .jr-barre-aide { display: none; }
 }
 
-/* ---------- Impression : une personne par feuille ---------- */
+/* ==========================================================
+   LA GRILLE RANGEABLE ET L'ÉDITEUR
+   ========================================================== */
+.jr-grille {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+  align-content: start;
+}
+.jr-case { position: relative; min-width: 0; }
+.jr-case > .jr-photo,
+.jr-case > figure { margin: 0; }
+
+/* Le mode édition : on voit les cases, et on peut les attraper. */
+.jr-edition .jr-case {
+  border: 1px dashed #bdb4a3;
+  padding: 4px;
+  cursor: grab;
+}
+.jr-edition .jr-case:hover { border-color: var(--jr-accent); }
+.jr-edition .jr-case.jr-choisi {
+  border: 1.5px solid var(--jr-accent);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, .06);
+}
+.jr-edition .jr-case.jr-vol { opacity: .3; }
+.jr-poignee {
+  display: none;
+  position: absolute;
+  top: -11px;
+  left: 6px;
+  z-index: 3;
+  background: var(--jr-accent);
+  color: var(--jr-papier);
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 6px;
+  border-radius: 3px;
+  letter-spacing: .1em;
+}
+.jr-edition .jr-poignee { display: block; }
+.jr-edition .jr-tete,
+.jr-edition .jr-pied { opacity: .55; }
+
+/* La barre d'outils, posée en bas de l'écran */
+.jr-barre {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100vw - 24px);
+  background: var(--blanc);
+  border: 1px solid var(--rose-pale);
+  border-radius: var(--r-m);
+  box-shadow: var(--ombre-haute);
+  padding: 10px 14px;
+}
+.jr-barre-aide  { font-size: .82rem; color: var(--encre-doux); max-width: 260px; }
+.jr-barre-etat  { font-size: .82rem; color: var(--encre-doux); }
+.jr-barre-largeurs { display: flex; gap: 4px; }
+.jr-sous-page {
+  width: min(794px, 100%);
+  margin-top: -16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ==========================================================
+   IMPRESSION ET PDF : exactement ce qu'on voit, en A4
+   ========================================================== */
+@page { size: A4 portrait; margin: 0; }
+
 @media print {
-  .journal { gap: 0; }
+  html, body {
+    background: #fff;
+    margin: 0;
+    padding: 0;
+  }
+  body::before,
+  .entete, .carte, .btn, .no-print, .voile-tuto,
+  .jr-barre, .jr-sous-page, .jr-reactions, .discret { display: none !important; }
+
+  .page { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  .journal { gap: 0; display: block; }
+
+  /* Les couleurs et les aplats doivent sortir à l'impression. */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
   .jr-page {
-    width: 100%;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+    padding: 12mm 13mm 0;
     box-shadow: none;
     page-break-after: always;
     break-after: page;
+    display: flex;
+    flex-direction: column;
   }
-  .jr-page:last-child { page-break-after: auto; break-after: auto; }
-  .jr-reactions { display: none !important; }
+  .jr-page:last-of-type { page-break-after: auto; break-after: auto; }
+  .jr-page::after { inset: 6mm; }
+
+  .jr-corps { flex: 1; }
+  .jr-manchette { font-size: 44pt; }
+  .jr-personne  { font-size: 16pt; }
+  .jr-page      { font-size: 10.5pt; }
+  .jr-chapeau   { font-size: 11.5pt; }
+  .jr-titre-bloc{ font-size: 11pt; }
+  .jr-pied      { font-size: 9pt; }
+  .jr-galerie img, .jr-galerie video { max-height: 38mm; }
+  .jr-photo img { max-height: 95mm; }
+  img, .jr-bloc, .jr-case, .jr-citation { break-inside: avoid; }
 }

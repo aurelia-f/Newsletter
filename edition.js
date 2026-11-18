@@ -11,6 +11,7 @@ import { exigerSession, brancherEntete, afficherErreur,
 import { EMOJIS_REACTION } from './config.js';
 import { $, txt, moisEnLettres, messageVide, initiale } from './ui.js';
 import { pageJournal, uneDuNumero } from './journal.js';
+import { ouvrirEditeur, fermerEditeur } from './editeur.js';
 
 const vue = $('#vue');
 const editionId = new URLSearchParams(location.search).get('id');
@@ -46,12 +47,13 @@ async function afficher() {
   // Une page par personne, chacune avec son gabarit.
   const pages = reponses.length
     ? reponses.map((r, i) => pageJournal(r, ed, i, membres, posees, pied)
+        + boutonRanger(r)
         + barreReactions(r, reactions)).join('')
     : messageVide('🕊️', 'Personne n\'a encore répondu');
 
   vue.innerHTML = `
     <div class="page">
-      <a href="groupe.html?id=${encodeURIComponent(ed.groupe.id)}" class="discret no-print">← ${txt(ed.groupe.nom)}</a>
+      <a href="groupe.html?id=${encodeURIComponent(ed.groupe.id)}" class="lien-retour no-print">${txt(ed.groupe.nom)}</a>
 
       ${barreRendu(ed)}
 
@@ -71,6 +73,7 @@ async function afficher() {
 
   $('#btn-pdf').addEventListener('click', () => window.print());
   brancherRendu(ed);
+  brancherRangement();
   brancherReactions();
 }
 
@@ -151,6 +154,30 @@ function rotation(hex) {
 }
 
 /* ==========================================================
+   RANGER SA PAGE
+   Le bouton n'apparaît que sous sa propre page.
+   ========================================================== */
+function boutonRanger(r) {
+  if (r.profile_id !== moi?.id) return '';
+  const range = r.mise_en_page?.libre === true;
+  return `<div class="jr-sous-page no-print">
+    <button type="button" class="btn fil petit" data-ranger="${txt(r.id)}">
+      ${range ? 'Reprendre ma mise en page' : 'Ranger ma page comme je veux'}
+    </button>
+  </div>`;
+}
+
+function brancherRangement() {
+  vue.querySelectorAll('[data-ranger]').forEach(b =>
+    b.addEventListener('click', () => {
+      const article = vue.querySelector(`.jr-page[data-reponse="${CSS.escape(b.dataset.ranger)}"]`);
+      if (!article) return;
+      fermerEditeur();
+      ouvrirEditeur(article, b.dataset.ranger, () => afficher());
+    }));
+}
+
+/* ==========================================================
    Les réactions, sous la page de chacune (jamais imprimées)
    ========================================================== */
 function barreReactions(r, reactions) {
@@ -227,7 +254,7 @@ function pageCollective(ed, surtitre, corps, pied) {
     <div class="jr-tete">
       <div class="jr-ligne-haute">
         <span>${txt(moisEnLettres(ed.mois))}</span>
-        <span class="jr-marque"><img src="logo.png" alt="">My Newsletter</span>
+        <span class="jr-marque"><img src="logo-journal.png" alt="">My Newsletter</span>
       </div>
       <div class="jr-filet"></div>
       <h1 class="jr-manchette">${txt(ed.groupe.nom)}</h1>

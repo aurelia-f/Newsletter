@@ -718,7 +718,7 @@ export function afficherErreur(err) {
   const m = echappe(err?.message || err || 'Une erreur est survenue.');
   vue.innerHTML = `<div class="page etroit">
     <div class="message erreur">${m}</div>
-    <a href="groupes.html" class="btn doux">Revenir à mes groupes</a>
+    <a href="groupes.html" class="lien-retour">Revenir à mes groupes</a>
   </div>`;
 }
 
@@ -736,4 +736,17 @@ export async function choisirRendu(editionId, rendu, couleur) {
     .single();
   if (error) throw error;
   return data;
+}
+
+/* ==========================================================
+   La mise en page personnelle
+   Chacune ne range que sa propre page : les règles d'écriture
+   de la table des réponses s'en chargent (migration-11.sql).
+   ========================================================== */
+export async function enregistrerMiseEnPage(reponseId, miseEnPage) {
+  const { error } = await sb
+    .from('reponses')
+    .update({ mise_en_page: miseEnPage })
+    .eq('id', reponseId);
+  if (error) throw error;
 }

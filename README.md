@@ -96,6 +96,9 @@ Partagé par toutes les pages :
 | `migration-08.sql` | Ouverture d'un numéro par tout le monde, cinq questions de profil |
 | `migration-09.sql` | Retrait de l'envoi de mails (Brevo) |
 | `migration-10.sql` | La couleur du numéro : la première qui choisit décide |
+| `migration-11.sql` | Chacune range sa page comme elle veut |
+| `editeur.js` | Le rangement des blocs : glisser-déposer et largeurs |
+| `logo-journal.png` | Le logo en noir et blanc, sur fond transparent, pour l'en-tête du journal |
 | `journal.js` | **Le rendu journal** : les cinq gabarits, l'en-tête et le pied verrouillés |
 | `apercu-journal.html` | Page de travail pour regarder les cinq gabarits côte à côte |
 | `dictee.js` | La dictée vocale, partagée par les pages |
@@ -343,6 +346,27 @@ Deux copines côte à côte n'ont jamais le même, et le gabarit tourne
 d'un mois à l'autre (il dépend du numéro d'édition). Pour les regarder
 tous les cinq d'un coup, avec de fausses réponses : `apercu-journal.html`.
 
+### Ranger sa page
+Sous sa propre page, et seulement la sienne, chacune a un bouton
+**Ranger ma page comme je veux**. La feuille passe alors en grille de
+six colonnes : on attrape un bloc, on le pose ailleurs, on choisit sa
+largeur (⅓, ½, ⅔, pleine). L'en-tête et le pied restent intouchables.
+
+Tant que personne n'a rien bougé, la page est montée par son gabarit.
+Dès qu'on enregistre, c'est le rangement perso qui s'applique, et il
+est gardé d'un mois sur l'autre. Le bouton **Remettre le gabarit**
+revient en arrière.
+
+Si une question arrive après coup, son bloc se glisse à la fin sans
+casser le rangement.
+
+### Le PDF
+Le bouton **Enregistrer en PDF** sort exactement ce qui est à l'écran,
+en **A4**, une personne par feuille, sans les boutons ni les réactions.
+Dans la fenêtre d'impression, laisse les marges sur « aucune » et coche
+les graphismes d'arrière-plan : c'est déjà prévu dans la feuille de
+style, mais certains navigateurs demandent confirmation.
+
 ### La couleur du numéro
 Trois rendus : **noir et blanc**, **une seule couleur**, **couleur**.
 La première personne qui en choisit un le fixe pour tout le numéro :
@@ -358,11 +382,6 @@ couleur choisie, comme un journal imprimé en bichromie.
 - Tant qu'une édition est **ouverte**, chacune ne voit que sa propre réponse.
   La surprise du jour de publication est préservée.
 - Une fois **publiée**, tout le groupe peut la lire, et la relire, pour toujours.
-
-### Le PDF
-Sur une édition publiée, le bouton **Enregistrer en PDF** ouvre
-l'impression du navigateur : choisis « Enregistrer au format PDF ».
-La mise en page est déjà prévue pour l'impression.
 
 ---
 
