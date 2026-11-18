@@ -721,3 +721,19 @@ export function afficherErreur(err) {
     <a href="groupes.html" class="btn doux">Revenir à mes groupes</a>
   </div>`;
 }
+
+/* ==========================================================
+   La couleur du numéro
+   La première personne qui choisit fixe la couleur pour tout
+   le groupe. La base refuse les suivantes (migration-10.sql).
+   ========================================================== */
+export async function choisirRendu(editionId, rendu, couleur) {
+  const { data, error } = await sb
+    .from('editions')
+    .update({ rendu, couleur: rendu === 'nb' ? null : couleur })
+    .eq('id', editionId)
+    .select('rendu, couleur, rendu_par')
+    .single();
+  if (error) throw error;
+  return data;
+}

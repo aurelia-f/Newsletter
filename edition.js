@@ -1,11 +1,16 @@
 // ==========================================================
-//  Page : edition.html?id=… · le magazine
+//  Page : edition.html?id=… · le journal
+//  Une page par personne, en vrai newspaper.
+//  Le rendu (noir et blanc, une couleur, couleur) est choisi par
+//  la première qui le décide, et vaut pour tout le numéro.
 // ==========================================================
 import { exigerSession, brancherEntete, afficherErreur,
          edition, reponsesPubliees, questionsPosees, membresDuGroupe,
-         reactionsDesReponses, enregistrerReaction, editionIlYaUnAn } from './db.js';
-import { NOM_DU_SITE, EMOJIS_REACTION } from './config.js';
-import { $, txt, moisEnLettres, messageVide, lecteurMusique, initiale } from './ui.js';
+         reactionsDesReponses, enregistrerReaction, editionIlYaUnAn,
+         choisirRendu } from './db.js';
+import { EMOJIS_REACTION } from './config.js';
+import { $, txt, moisEnLettres, messageVide, initiale } from './ui.js';
+import { pageJournal, uneDuNumero } from './journal.js';
 
 const vue = $('#vue');
 const editionId = new URLSearchParams(location.search).get('id');
@@ -28,27 +33,36 @@ async function afficher() {
     editionIlYaUnAn(ed.groupe.id, ed.mois),
   ]);
 
-  document.title = `Entre Nous · ${moisEnLettres(ed.mois)}`;
+  document.title = `${ed.groupe.nom} · ${moisEnLettres(ed.mois)}`;
 
   const moisDuNumero = Number(String(ed.mois).slice(5, 7));
 
-  const articles = reponses.length
-    ? reponses.map(r => article(r, ed, posees, reactions)).join('<div class="separateur">· · ·</div>')
+  // Le pied de page : les prénoms du groupe, toujours les mêmes.
+  const pied = membres
+    .map(m => m.prenom || m.email?.split('@')[0] || '')
+    .filter(Boolean)
+    .join(' · ');
+
+  // Une page par personne, chacune avec son gabarit.
+  const pages = reponses.length
+    ? reponses.map((r, i) => pageJournal(r, ed, i, membres, posees, pied)
+        + barreReactions(r, reactions)).join('')
     : messageVide('🕊️', 'Personne n\'a encore répondu');
 
   vue.innerHTML = `
     <div class="page">
       <a href="groupe.html?id=${encodeURIComponent(ed.groupe.id)}" class="discret no-print">← ${txt(ed.groupe.nom)}</a>
-      <div class="couverture">
-        <img class="logo" src="logo.png" alt="">
-        <span class="numero">Numéro ${ed.numero} · ${txt(ed.groupe.nom)}</span>
-        <h1>${txt(NOM_DU_SITE)}</h1>
-        <p class="mois">${txt(moisEnLettres(ed.mois))}</p>
-      </div>
 
-      ${pageAnniversaires(membres, moisDuNumero)}
-      ${articles}
-      ${pageIlYaUnAn(ilYaUnAn)}
+      ${barreRendu(ed)}
+
+      <div class="journal" id="journal"
+           data-rendu="${txt(ed.rendu || 'nb')}"
+           style="${ed.couleur ? `--jr-accent:${txt(ed.couleur)};--jr-rotation:${rotation(ed.couleur)}deg` : ''}">
+        ${reponses.length ? uneDuNumero(ed, reponses, membres) : ''}
+        ${pageAnniversaires(ed, membres, moisDuNumero, pied)}
+        ${pages}
+        ${pageIlYaUnAn(ed, ilYaUnAn, pied)}
+      </div>
 
       <div class="rangee no-print" style="justify-content:center;margin-top:30px">
         <button class="btn fil" id="btn-pdf">Enregistrer en PDF</button>
@@ -56,125 +70,88 @@ async function afficher() {
     </div>`;
 
   $('#btn-pdf').addEventListener('click', () => window.print());
+  brancherRendu(ed);
   brancherReactions();
 }
 
 /* ==========================================================
-   La page de chaque copine
+   LE CHOIX DE LA COULEUR
+   Tant que personne n'a choisi, tout le monde peut.
+   Une fois choisie, elle est annoncée, et seules les
+   administratrices peuvent y revenir (verrouillé dans la base).
    ========================================================== */
-function article(r, ed, posees, reactions) {
-  const nom = r.auteure?.prenom || r.auteure?.email?.split('@')[0] || 'Une copine';
-  const vignette = r.auteure?.avatar_url
-    ? `<img src="${txt(r.auteure.avatar_url)}" alt="">`
-    : `<span>${txt(nom.charAt(0).toUpperCase())}</span>`;
+function barreRendu(ed) {
+  const dejaChoisi = Boolean(ed.rendu);
+  const actuel = ed.rendu || 'nb';
+  const couleur = ed.couleur || '#8c1d2f';
 
-  // Les rubriques du numéro.
-  const rubriques = ed.questions.map(q => rubrique(q, r)).join('');
+  const bouton = (valeur, libelle) => `
+    <button type="button" class="btn petit ${actuel === valeur ? '' : 'fil'}"
+            data-rendu="${valeur}">${libelle}</button>`;
 
-  // Les questions posées par les copines, auxquelles elle a répondu.
-  const questionsRepondues = posees.map(q => {
-    const valeur = r.contenu?.['q_' + q.id];
-    if (!valeur) return '';
-    const deQui = q.auteur?.prenom || 'une copine';
-    const signature = q.destinataire_id
-      ? `Question de ${deQui}, posée à ${q.destinataire?.prenom || nom}`
-      : `Question de ${deQui} au groupe`;
-    return `<div class="rubrique rubrique-question">
-      <div class="intitule">${txt(signature)}</div>
-      <p class="question-posee">${txt(q.texte)}</p>
-      <p>${txt(valeur)}</p>
-    </div>`;
-  }).join('');
-
-  return `<article class="article" data-reponse="${txt(r.id)}">
-    <div class="signature">
-      <span class="pastille">${vignette}</span>
-      <div>
-        <h2 style="font-size:1.4rem">${txt(nom)}</h2>
-        ${r.auteure?.ville || r.auteure?.occupation ? `<p class="discret" style="margin:0">${
-          [r.auteure.occupation, r.auteure.ville].filter(Boolean).map(txt).join(' · ')}</p>` : ''}
-        ${r.auteure?.devise ? `<p class="devise">« ${txt(r.auteure.devise)} »</p>` : ''}
-      </div>
+  return `<div class="carte no-print" id="barre-rendu" style="margin-bottom:18px">
+    <span class="surtitre">La couleur du numéro</span>
+    <p class="discret" style="margin:2px 0 10px">
+      ${dejaChoisi
+        ? 'Elle est déjà choisie pour ce numéro. Tout le groupe a la même.'
+        : 'La première qui choisit la fixe pour tout le monde. Sans choix, le numéro sort en noir et blanc.'}
+    </p>
+    <div class="rangee" style="gap:8px;align-items:center;flex-wrap:wrap">
+      ${bouton('nb', 'Noir & blanc')}
+      ${bouton('duo', 'Une couleur')}
+      ${bouton('couleur', 'Couleur')}
+      <input type="color" id="rendu-couleur" value="${txt(couleur)}"
+             title="La teinte du numéro"
+             style="width:44px;height:34px;padding:2px;border:1px solid var(--rose-pale);border-radius:8px;background:var(--blanc)">
+      <span class="discret" id="rendu-etat"></span>
     </div>
-    ${rubriques}
-    ${questionsRepondues}
-    ${barreReactions(r, reactions)}
-  </article>`;
+  </div>`;
+}
+
+function brancherRendu(ed) {
+  const barre = $('#barre-rendu');
+  if (!barre) return;
+  const etat = $('#rendu-etat');
+  const pioche = $('#rendu-couleur');
+
+  const appliquer = async (rendu) => {
+    etat.textContent = 'on enregistre…';
+    try {
+      const maj = await choisirRendu(ed.id, rendu, pioche.value);
+      ed.rendu = maj.rendu;
+      ed.couleur = maj.couleur;
+      await afficher();
+    } catch (err) {
+      etat.textContent = err.message;
+    }
+  };
+
+  barre.querySelectorAll('[data-rendu]').forEach(b =>
+    b.addEventListener('click', () => appliquer(b.dataset.rendu)));
+
+  // Changer la teinte bascule aussi en mode « une couleur ».
+  pioche.addEventListener('change', () =>
+    appliquer(ed.rendu === 'couleur' ? 'couleur' : 'duo'));
+}
+
+/** Teinte de la couleur choisie, pour colorer les photos en mode duo. */
+function rotation(hex) {
+  if (!/^#[0-9a-f]{6}$/i.test(hex || '')) return 0;
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  if (!d) return 0;
+  let h;
+  if (mx === r) h = ((g - b) / d) % 6;
+  else if (mx === g) h = (b - r) / d + 2;
+  else h = (r - g) / d + 4;
+  // Le filtre sepia part d'un orangé autour de 35°.
+  return Math.round((h * 60 + 360) % 360) - 35;
 }
 
 /* ==========================================================
-   Une rubrique, selon son type
-   ========================================================== */
-function rubrique(q, r) {
-  const v = r.contenu?.[q.id];
-
-  // La question des fêtes n'a pas la même formulation pour tout le
-  // monde : on réaffiche celle que la personne a réellement vue.
-  const intitule = r.contenu?.[q.id + '_intitule'] || q.intitule;
-  const entete = `<div class="intitule">${txt(intitule)}</div>`;
-
-  if (q.type === 'photos') {
-    if (!r.medias?.length) return '';
-    return `<div class="rubrique">${entete}
-      <div class="galerie">${r.medias.map(m => m.type === 'video'
-        ? `<video src="${txt(m.url)}" controls playsinline></video>`
-        : `<img src="${txt(m.url)}" alt="" loading="lazy">`).join('')}</div>
-    </div>`;
-  }
-
-  if (v == null || v === '' || (Array.isArray(v) && !v.length)) return '';
-
-  switch (q.type) {
-    case 'musique':
-      return `<div class="rubrique">${entete}
-        <p>${txt(v)}</p>
-        ${lecteurMusique(r.contenu[q.id + '_lien'])}
-      </div>`;
-
-    case 'qcm':
-      return `<div class="rubrique">${entete}
-        <p><span class="reponse-choix">${txt(v)}</span></p>
-      </div>`;
-
-    case 'multi':
-      return `<div class="rubrique">${entete}
-        <p>${(Array.isArray(v) ? v : [v]).map(c =>
-          `<span class="reponse-choix">${txt(c)}</span>`).join(' ')}</p>
-      </div>`;
-
-    case 'emojis':
-      return `<div class="rubrique">${entete}
-        <p class="grands-emojis">${(Array.isArray(v) ? v : [v]).map(e => txt(e)).join(' ')}</p>
-      </div>`;
-
-    case 'mot':
-      return `<div class="rubrique">${entete}
-        <p class="un-mot">${txt(v)}</p>
-      </div>`;
-
-    case 'note': {
-      const n = Number(v);
-      return `<div class="rubrique">${entete}
-        <p class="etoiles-lecture">${'★'.repeat(n)}<span class="vides">${'★'.repeat(5 - n)}</span></p>
-      </div>`;
-    }
-
-    case 'curseur': {
-      const min = q.min ?? 0, max = q.max ?? 10;
-      const pourcent = Math.round(((Number(v) - min) / (max - min)) * 100);
-      return `<div class="rubrique">${entete}
-        <div class="jauge"><div class="jauge-remplie" style="width:${pourcent}%"></div></div>
-        <p class="discret" style="margin-top:3px">${txt(v)} sur ${max}</p>
-      </div>`;
-    }
-
-    default:
-      return `<div class="rubrique">${entete}<p>${txt(v)}</p></div>`;
-  }
-}
-
-/* ==========================================================
-   Les réactions
+   Les réactions, sous la page de chacune (jamais imprimées)
    ========================================================== */
 function barreReactions(r, reactions) {
   const siennes = reactions.filter(x => x.reponse_id === r.id);
@@ -189,25 +166,23 @@ function barreReactions(r, reactions) {
     </div>`).join('');
 
   if (cestMoi) {
-    return `<div class="zone-reactions">
+    return `<div class="zone-reactions jr-reactions no-print">
       ${deja || '<p class="discret">Pas encore de réaction sur ta page.</p>'}
     </div>`;
   }
 
-  return `<div class="zone-reactions">
+  return `<div class="zone-reactions jr-reactions no-print">
     ${deja}
-    <div class="no-print">
-      <div class="choix-reactions">
-        ${EMOJIS_REACTION.map(e => `
-          <button type="button" class="bouton-emoji ${mienne?.emoji === e ? 'actif' : ''}"
-                  data-reagir="${txt(r.id)}" data-emoji="${txt(e)}">${e}</button>`).join('')}
-      </div>
-      <form class="rangee form-mot" data-mot-pour="${txt(r.id)}" style="margin-top:8px">
-        <input type="text" name="mot" maxlength="140" style="flex:1;min-width:180px"
-               value="${txt(mienne?.mot ?? '')}" placeholder="Un petit mot pour ${txt(r.auteure?.prenom || 'elle')}…">
-        <button class="btn doux petit" type="submit">Envoyer</button>
-      </form>
+    <div class="choix-reactions">
+      ${EMOJIS_REACTION.map(e => `
+        <button type="button" class="bouton-emoji ${mienne?.emoji === e ? 'actif' : ''}"
+                data-reagir="${txt(r.id)}" data-emoji="${txt(e)}">${e}</button>`).join('')}
     </div>
+    <form class="rangee form-mot" data-mot-pour="${txt(r.id)}" style="margin-top:8px">
+      <input type="text" name="mot" maxlength="140" style="flex:1;min-width:180px"
+             value="${txt(mienne?.mot ?? '')}" placeholder="Un petit mot pour ${txt(r.auteure?.prenom || 'elle')}…">
+      <button class="btn doux petit" type="submit">Envoyer</button>
+    </form>
   </div>`;
 }
 
@@ -245,36 +220,54 @@ function brancherReactions() {
 }
 
 /* ==========================================================
-   Les pages collectives
+   Les pages collectives, au même format journal
    ========================================================== */
-function pageAnniversaires(membres, moisDuNumero) {
+function pageCollective(ed, surtitre, corps, pied) {
+  return `<article class="jr-page g-lettrine">
+    <div class="jr-tete">
+      <div class="jr-ligne-haute">
+        <span>${txt(moisEnLettres(ed.mois))}</span>
+        <span class="jr-marque"><img src="logo.png" alt="">My Newsletter</span>
+      </div>
+      <div class="jr-filet"></div>
+      <h1 class="jr-manchette">${txt(ed.groupe.nom)}</h1>
+      <div class="jr-filet jr-double"></div>
+      <div class="jr-personne">${txt(surtitre)}</div>
+      <div class="jr-filet"></div>
+    </div>
+    <div class="jr-corps">${corps}</div>
+    <div class="jr-pied">
+      <span>${txt(pied)}</span>
+      <span>Édition numéro ${txt(ed.numero)}</span>
+    </div>
+  </article>`;
+}
+
+function pageAnniversaires(ed, membres, moisDuNumero, pied) {
   const fetes = membres
     .filter(m => m.date_naissance
       && Number(String(m.date_naissance).slice(5, 7)) === moisDuNumero)
-    .sort((a, b) => String(a.date_naissance).slice(8) .localeCompare(String(b.date_naissance).slice(8)));
+    .sort((a, b) => String(a.date_naissance).slice(8).localeCompare(String(b.date_naissance).slice(8)));
 
   if (!fetes.length) return '';
 
-  return `<div class="carte carte-collective">
-    <span class="surtitre">Page collective</span>
-    <h2 style="margin:2px 0 16px">Les anniversaires du mois</h2>
-    <div class="rangee" style="gap:18px">
-      ${fetes.map(m => `
-        <div class="anniversaire">
-          <span class="pastille">${m.avatar_url
-            ? `<img src="${txt(m.avatar_url)}" alt="">`
-            : `<span>${txt(initiale(m))}</span>`}</span>
-          <strong>${txt(m.prenom || m.email.split('@')[0])}</strong>
-          <span class="discret">le ${txt(Number(String(m.date_naissance).slice(8, 10)))}</span>
-        </div>`).join('')}
-    </div>
+  const corps = `<div class="jr-portraits">
+    ${fetes.map(m => `
+      <figure class="jr-portrait">
+        ${m.avatar_url
+          ? `<img src="${txt(m.avatar_url)}" alt="" loading="lazy">`
+          : `<div class="jr-cadre-vide">${txt(initiale(m))}</div>`}
+        <figcaption>${txt(m.prenom || m.email.split('@')[0])}
+          · le ${txt(Number(String(m.date_naissance).slice(8, 10)))}</figcaption>
+      </figure>`).join('')}
   </div>`;
+
+  return pageCollective(ed, 'Les anniversaires du mois', corps, pied);
 }
 
-function pageIlYaUnAn(bloc) {
+function pageIlYaUnAn(ed, bloc, pied) {
   if (!bloc) return '';
 
-  // Une réponse au hasard, parmi celles qui ont du texte.
   const candidates = [];
   for (const r of bloc.reponses) {
     for (const q of bloc.edition.questions ?? []) {
@@ -287,19 +280,17 @@ function pageIlYaUnAn(bloc) {
   if (!candidates.length) return '';
   const choisie = candidates[Math.floor(Math.random() * candidates.length)];
 
-  return `
-    <div class="separateur">· · ·</div>
-    <div class="carte carte-collective">
-      <span class="surtitre">Il y a un an</span>
-      <h2 style="margin:2px 0 6px">${txt(moisEnLettres(bloc.edition.mois))}</h2>
-      <p class="discret" style="margin-bottom:14px">Numéro ${bloc.edition.numero}</p>
-      <div class="rubrique">
-        <div class="intitule">${txt(choisie.intitule)}</div>
-        <p class="citation">${txt(choisie.texte)}</p>
-        <p class="discret" style="margin-top:6px">${txt(choisie.nom)}, il y a un an</p>
-      </div>
-      <a class="discret no-print" href="edition.html?id=${encodeURIComponent(bloc.edition.id)}">
-        Relire tout le numéro de l'an dernier →
-      </a>
-    </div>`;
+  const corps = `
+    <p class="jr-chapeau">${txt(moisEnLettres(bloc.edition.mois))}, numéro ${txt(bloc.edition.numero)}.</p>
+    <section class="jr-bloc">
+      <h3 class="jr-titre-bloc">${txt(choisie.intitule)}</h3>
+      <p class="jr-texte">${txt(choisie.texte)}</p>
+      <p class="jr-legende">${txt(choisie.nom)}, il y a un an</p>
+    </section>
+    <p class="no-print" style="text-align:center">
+      <a class="discret" href="edition.html?id=${encodeURIComponent(bloc.edition.id)}">
+        Relire tout le numéro de l'an dernier →</a>
+    </p>`;
+
+  return pageCollective(ed, 'Il y a un an', corps, pied);
 }

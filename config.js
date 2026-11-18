@@ -10,7 +10,7 @@ export const SUPABASE_URL      = 'https://pwzdgeiewkbuicaoxkfv.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable_OQjM5gEsQfHyCPxDMEPw_g_b3y-ryov';
 
 // 2. Le nom de ta newsletter.
-export const NOM_DU_SITE = 'Entre Nous';
+export const NOM_DU_SITE = 'My Newsletter';
 export const BASELINE = 'Les nouvelles de nos vies, une fois par mois.';
 
 // ==========================================================

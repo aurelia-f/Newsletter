@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Newsletter · aperçu des gabarits</title>
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Nunito+Sans:wght@400;600;700;800&family=UnifrakturMaguntia&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!--
+  Page de travail : elle sert à regarder les cinq gabarits côte à côte
+  avec de fausses réponses, sans toucher à un vrai numéro.
+  Elle n'est reliée à rien : ni base, ni connexion.
+-->
+
+<main class="page">
+  <h1 style="text-align:center">Les cinq gabarits</h1>
+  <p class="discret" style="text-align:center;margin-bottom:18px">
+    Chaque copine reçoit un gabarit différent. Le gabarit tourne aussi d'un mois à l'autre.
+  </p>
+
+  <div class="carte no-print" style="margin-bottom:18px">
+    <div class="rangee" style="gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn petit" data-rendu="nb">Noir &amp; blanc</button>
+      <button class="btn petit fil" data-rendu="duo">Une couleur</button>
+      <button class="btn petit fil" data-rendu="couleur">Couleur</button>
+      <input type="color" id="teinte" value="#8c1d2f"
+             style="width:44px;height:34px;padding:2px;border:1px solid var(--rose-pale);border-radius:8px">
+    </div>
+  </div>
+
+  <div class="journal" id="journal" data-rendu="nb"></div>
+</main>
+
+<script type="module" src="apercu-journal.js"></script>
+</body>
+</html>

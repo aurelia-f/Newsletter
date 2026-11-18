@@ -1,4 +1,4 @@
-# Entre Nous, notre newsletter privée
+# My Newsletter, notre journal privé
 
 Site statique : aucune compilation, aucun `npm install`.
 Tu déposes le dossier, c'est en ligne.
@@ -75,7 +75,7 @@ pour tout le site.
 | Mon profil | `profil.html` | `profil.js` | Prénom, photo, anniversaire, ville, bio |
 | Un groupe | `groupe.html?id=…` | `groupe.js` | Les numéros, les copines, l'administration |
 | Le questionnaire | `repondre.html?mois=…` | `repondre.js` | Le formulaire du mois, commun à tous les groupes |
-| Le magazine | `edition.html?id=…` | `edition.js` | Le numéro publié, et le PDF |
+| Le journal | `edition.html?id=…` | `edition.js` | Le numéro publié, en vrai journal, et le PDF |
 
 Partagé par toutes les pages :
 
@@ -94,6 +94,10 @@ Partagé par toutes les pages :
 | `migration-06.sql` | La banque de questions copiée dans la base |
 | `migration-07.sql` | Le 1er du mois automatique, les relances et les mails |
 | `migration-08.sql` | Ouverture d'un numéro par tout le monde, cinq questions de profil |
+| `migration-09.sql` | Retrait de l'envoi de mails (Brevo) |
+| `migration-10.sql` | La couleur du numéro : la première qui choisit décide |
+| `journal.js` | **Le rendu journal** : les cinq gabarits, l'en-tête et le pied verrouillés |
+| `apercu-journal.html` | Page de travail pour regarder les cinq gabarits côte à côte |
 | `dictee.js` | La dictée vocale, partagée par les pages |
 | `tuto.js` | Le pop-up de bienvenue, partagé par les pages |
 
@@ -235,9 +239,8 @@ donc à l'heure même si personne n'ouvre le site.
 
 | Quand | Ce qui se passe |
 |---|---|
-| Le 27, 8h17 UTC | Relance de celles qui n'ont pas encore envoyé leur page |
+| Le 27, 8h17 UTC | Rappel, dans l'appli, pour celles qui n'ont pas encore envoyé leur page |
 | Le 1er, 2h17 UTC | Publication du mois écoulé, ouverture du nouveau |
-| Toutes les 5 min | La file de mails se vide |
 
 Un numéro sans **aucune** réponse n'est pas publié : il reste ouvert, et
 le groupe reçoit un message pour se relancer. Évite les trous vides dans
@@ -263,27 +266,13 @@ administratrice ouvre le site, il compare une empreinte et recopie la
 banque dans la base si elle a changé. Tu n'as jamais à toucher à la
 table `banque`.
 
-### Les mails
-Supabase ne sait pas envoyer de mail tout seul : il faut un service
-d'envoi. Tant qu'il n'est pas configuré, les mails s'accumulent dans la
-file sans rien casser, et ils partiront dès que tu auras collé ta clé.
+### Pas de mails
+Le site n'envoie aucun mail, et c'est voulu : on se connecte, on lit le
+numéro. Le seul mail qui existe est le lien de connexion, envoyé par
+Supabase lui-même.
 
-Une seule commande à lancer dans le SQL Editor :
-```sql
-select newsletter.configurer_mail('brevo', 'TA-CLE-API',
-       'ton@email.com', 'Entre Nous');
-```
-`brevo` ou `resend` au choix. Brevo est plus simple au départ : il
-suffit de faire vérifier ton adresse d'expéditeur, sans posséder de
-domaine.
-
-Pour voir où en est la file :
-```sql
-select statut, motif, count(*) from newsletter.mails group by 1, 2;
-select newsletter.envoyer_mails();   -- vider la file maintenant
-```
-La clé est rangée sous une entrée `secret_`, que les règles de sécurité
-empêchent de lire depuis le site. Elle ne sort jamais de la base.
+Les rappels (« il te reste trois jours ») s'affichent dans l'appli, sur
+la carte du groupe et en haut du questionnaire.
 
 ### Les pages collectives
 Montées automatiquement, sans rien à remplir :
@@ -329,6 +318,40 @@ le magazine. Les autres informations restent sur sa fiche, consultables
 quand on veut. À la toute première
 connexion, le site demande simplement le prénom. Sans ça les copines
 apparaîtraient sous le début de leur adresse e-mail.
+
+### Le rendu journal
+Le numéro ne ressemble plus à une page web : c'est un vrai journal.
+Une feuille par personne, avec sa photo du mois en grand.
+
+L'**en-tête** et le **pied** sont verrouillés et identiques partout :
+mois et année à gauche, `My Newsletter` à droite, le nom du groupe en
+gothique, le prénom de la personne, et en bas les prénoms du groupe
+avec le numéro d'édition. Personne ne peut y toucher.
+
+Ce qui change, c'est la **mise en page du corps**. Cinq gabarits, dans
+`journal.js` :
+
+| Gabarit | Ce qu'il donne |
+|---|---|
+| `g-classique` | Colonne étroite à gauche, photo dominante à droite |
+| `g-edit` | Chapeau en italique, deux colonnes, photo flottée à droite |
+| `g-lettrine` | Photo en bandeau, grande lettrine, deux colonnes |
+| `g-retro` | Photo verticale à gauche, titres en blocs pleins à droite |
+| `g-urbain` | Photo panoramique, trois colonnes serrées |
+
+Deux copines côte à côte n'ont jamais le même, et le gabarit tourne
+d'un mois à l'autre (il dépend du numéro d'édition). Pour les regarder
+tous les cinq d'un coup, avec de fausses réponses : `apercu-journal.html`.
+
+### La couleur du numéro
+Trois rendus : **noir et blanc**, **une seule couleur**, **couleur**.
+La première personne qui en choisit un le fixe pour tout le numéro :
+tout le groupe a le même journal. Sans choix, le numéro sort en noir
+et blanc. Seule une administratrice peut revenir dessus, et c'est
+verrouillé dans la base, pas seulement dans l'interface.
+
+En mode « une seule couleur », les photos sont teintées dans la
+couleur choisie, comme un journal imprimé en bichromie.
 
 ### La confidentialité
 - Chaque copine ne voit que les groupes dont elle est membre.
