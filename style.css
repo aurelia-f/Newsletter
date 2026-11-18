@@ -1,5 +1,5 @@
 /* ==========================================================
-   Entre Nous — design system
+   Entre Nous : design system
    Palette relevée directement sur le logo :
    crème, framboise profond, rose poudré, doré.
    ========================================================== */
@@ -108,13 +108,35 @@ a { color: var(--framboise); }
   margin: 0 auto;
   padding: 18px 22px;
 }
-.marque { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+/* Les deux éléments de droite, mon compte et la déconnexion, tiennent
+   sur une seule ligne, alignés sur leur milieu. Sans ce bloc ils se
+   comportaient comme du texte et pouvaient passer à la ligne. */
+#entete-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 10px;
+  flex-shrink: 0;
+}
+#entete-actions > * { flex-shrink: 0; }
+#entete-actions .btn { white-space: nowrap; }
+
+.marque {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-decoration: none;
+  min-width: 0;          /* laisse la place au bloc de droite */
+}
 .marque img { width: 46px; height: 46px; object-fit: contain; }
 .marque span {
   font-family: var(--serif);
   font-size: 1.32rem;
   font-weight: 600;
   color: var(--framboise);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---------- Boutons ---------- */
@@ -383,7 +405,14 @@ textarea { min-height: 112px; resize: vertical; line-height: 1.6; }
   transition: background .15s ease;
 }
 .lien-profil:hover { background: var(--rose-voile); }
-.nom-entete { font-weight: 700; font-size: .93rem; }
+.nom-entete {
+  font-weight: 700;
+  font-size: .93rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 10ch;       /* un prénom très long est tronqué, pas de retour à la ligne */
+}
 
 /* ---------- Liste des copines ---------- */
 .ligne-membre {
@@ -600,6 +629,224 @@ fieldset.sans-bordure > legend { padding: 0; }
 
 .etiquette.nouveau { background: var(--dore); color: #5A3A00; }
 
+
+/* ==========================================================
+   Le tutoriel d'accueil
+   ========================================================== */
+body.sans-defilement { overflow: hidden; }
+
+.voile-tuto {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(90, 18, 48, .42);
+  backdrop-filter: blur(3px);
+  animation: voile-apparait .22s ease;
+}
+@keyframes voile-apparait { from { opacity: 0; } }
+
+.modale {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: var(--blanc);
+  border: 1px solid var(--creme-fonce);
+  border-radius: var(--r-l);
+  padding: 34px 30px 26px;
+  box-shadow: var(--ombre-haute);
+  text-align: center;
+  animation: modale-apparait .26s cubic-bezier(.2, .9, .3, 1.1);
+}
+@keyframes modale-apparait {
+  from { opacity: 0; transform: translateY(14px) scale(.97); }
+}
+
+.fermer-modale {
+  position: absolute;
+  top: 12px; right: 14px;
+  width: 32px; height: 32px;
+  border: none; border-radius: 50%;
+  background: var(--creme);
+  color: var(--encre-doux);
+  font-size: 1.3rem; line-height: 1;
+  cursor: pointer;
+  transition: background .14s ease, color .14s ease;
+}
+.fermer-modale:hover { background: var(--rose-voile); color: var(--framboise); }
+
+.emoji-tuto {
+  display: block;
+  font-size: 2.8rem;
+  line-height: 1;
+  margin-bottom: 14px;
+}
+.corps-tuto { font-size: 1rem; line-height: 1.6; }
+.corps-tuto strong { color: var(--framboise); }
+
+.points-tuto {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 24px;
+}
+.points-tuto .point {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--creme-fonce);
+  transition: all .18s ease;
+}
+.points-tuto .point.actif {
+  background: var(--framboise);
+  width: 22px;
+  border-radius: 999px;
+}
+
+
+/* ==========================================================
+   La carte du questionnaire du mois, sur l'accueil
+   ========================================================== */
+.carte-questionnaire {
+  background: linear-gradient(140deg, var(--rose-voile), var(--blanc) 70%);
+  border-color: var(--rose-pale);
+  margin-bottom: 26px;
+}
+.carte-questionnaire h2 { font-family: var(--serif); }
+
+/* ==========================================================
+   Le choix des groupes, à l'envoi
+   ========================================================== */
+.carte-envoi { border-color: var(--rose-pale); }
+
+.ligne-groupe {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border: 1.5px solid var(--creme-fonce);
+  border-radius: var(--r-m);
+  background: var(--blanc);
+  cursor: pointer;
+  transition: border-color .14s ease, background .14s ease;
+}
+.ligne-groupe:hover { border-color: var(--rose); }
+.ligne-groupe:has(input:checked) {
+  border-color: var(--framboise);
+  background: var(--rose-voile);
+}
+.ligne-groupe.inactive { opacity: .55; cursor: not-allowed; }
+.ligne-groupe.servie { border-style: dashed; }
+.ligne-groupe.inactive:hover { border-color: var(--creme-fonce); }
+
+.ligne-groupe input[type=checkbox] {
+  width: 21px; height: 21px;
+  accent-color: var(--framboise);
+  flex-shrink: 0;
+  cursor: inherit;
+}
+.ligne-groupe .emoji-groupe { font-size: 1.4rem; line-height: 1; flex-shrink: 0; }
+.ligne-groupe .texte-groupe { display: flex; flex-direction: column; min-width: 0; }
+.ligne-groupe .texte-groupe strong { line-height: 1.3; }
+.ligne-groupe .texte-groupe .discret { font-size: .84rem; }
+
+/* ==========================================================
+   Ouvrir un questionnaire
+   ========================================================== */
+.carte-ouvrir {
+  background: linear-gradient(150deg, #FFF8E7, var(--blanc) 70%);
+  border-color: var(--dore);
+}
+.carte-ouvrir .surtitre { color: #9A6B00; }
+
+/* La devise, sous le nom dans le magazine */
+.devise {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--rose);
+  margin: 4px 0 0;
+  font-size: .95rem;
+}
+
+/* ==========================================================
+   La dictée
+   ========================================================== */
+.champ-dictee { position: relative; display: block; }
+.champ-dictee > input,
+.champ-dictee > textarea { padding-right: 52px; }
+
+.bouton-micro {
+  position: absolute;
+  top: 9px; right: 9px;
+  width: 34px; height: 34px;
+  border: 1.5px solid var(--creme-fonce);
+  border-radius: 50%;
+  background: var(--blanc);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .14s ease;
+  padding: 0;
+}
+.bouton-micro:hover { border-color: var(--rose); background: var(--rose-voile); }
+
+/* Le micro est dessiné en CSS, pour n'avoir aucune image à charger. */
+.icone-micro {
+  position: relative;
+  width: 9px; height: 13px;
+  border-radius: 999px;
+  background: var(--framboise);
+  display: block;
+}
+.icone-micro::before {
+  content: '';
+  position: absolute;
+  left: -4px; bottom: -6px;
+  width: 17px; height: 9px;
+  border: 1.5px solid var(--framboise);
+  border-top: none;
+  border-radius: 0 0 999px 999px;
+}
+.icone-micro::after {
+  content: '';
+  position: absolute;
+  left: 3.5px; bottom: -9px;
+  width: 2px; height: 4px;
+  background: var(--framboise);
+}
+
+.bouton-micro.ecoute {
+  background: var(--framboise);
+  border-color: var(--framboise);
+  animation: pulse-micro 1.3s ease-in-out infinite;
+}
+.bouton-micro.ecoute .icone-micro,
+.bouton-micro.ecoute .icone-micro::after { background: var(--creme); }
+.bouton-micro.ecoute .icone-micro::before { border-color: var(--creme); }
+
+@keyframes pulse-micro {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(168, 27, 76, .34); }
+  50%      { box-shadow: 0 0 0 9px rgba(168, 27, 76, 0); }
+}
+
+.champ-dictee.en-dictee > input,
+.champ-dictee.en-dictee > textarea {
+  border-color: var(--framboise);
+  box-shadow: 0 0 0 3px var(--rose-voile);
+}
+.note-dictee { margin-top: 7px; }
+
+/* ==========================================================
+   Sections et étiquettes du questionnaire
+   ========================================================== */
+.titre-section h3 { text-align: center; }
+.note-groupe { color: var(--rose); font-weight: 600; }
+
 /* ---------- Divers ---------- */
 .vide { text-align: center; padding: 56px 22px; color: var(--encre-doux); }
 .vide .emoji { font-size: 2.6rem; display: block; margin-bottom: 12px; }
@@ -624,18 +871,26 @@ fieldset.sans-bordure > legend { padding: 0; }
 @media (max-width: 600px) {
   .page { padding: 20px 16px 80px; }
   .nom-entete { display: none; }
+  .lien-profil { padding: 3px; }
+  #entete-actions { gap: 7px; }
+  #entete-actions .btn.petit { padding: 7px 13px; font-size: .82rem; }
   .onglet { padding: 9px 15px; font-size: .88rem; }
   .ligne-membre { align-items: flex-start; }
   .depliant > summary { padding: 15px 20px; }
   .depliant-corps { padding: 15px 20px 20px; }
   .palette-emojis { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); }
   .un-mot { font-size: 1.5rem; }
+  .modale { padding: 28px 20px 20px; }
+  .carte-questionnaire .rangee.espace { flex-direction: column; align-items: flex-start; }
+  .carte-questionnaire .btn { width: 100%; }
+  .ligne-groupe { padding: 11px 13px; gap: 10px; }
+  .emoji-tuto { font-size: 2.3rem; }
   .carte, .article { padding: 20px; }
   .entete { padding: 14px 16px; }
 }
 
 @media print {
-  body::before, .entete, .btn, .no-print { display: none !important; }
+  body::before, .entete, .btn, .no-print, .voile-tuto { display: none !important; }
   .depliant-corps { display: block !important; }
   .etoile, .bouton-emoji { color: var(--dore); }
   .article, .couverture { box-shadow: none; break-inside: avoid; }

@@ -1,10 +1,13 @@
 // ==========================================================
-//  Page : groupes.html — la liste de mes groupes
+//  Page : groupes.html · la liste de mes groupes
 //  Deux onglets : ceux que je gère, ceux où je participe.
 // ==========================================================
 import { exigerSession, brancherEntete, afficherErreur, exigerPrenom,
-         mesGroupes, creerGroupe } from './db.js';
-import { $, txt, messageVide, alerte } from './ui.js';
+         mesGroupes, creerGroupe, editionsOuvertes, mesEnvois,
+         synchroniserBanque } from './db.js';
+import { PALETTE_EMOJIS_GROUPE } from './config.js';
+import { tutoSiPremiereVisite } from './tuto.js';
+import { $, txt, moisEnLettres, moisCourant, messageVide, alerte } from './ui.js';
 
 const vue = $('#vue');
 
@@ -13,12 +16,25 @@ if (await exigerSession()) {
   // Première connexion : on demande le prénom avant tout le reste.
   if (!exigerPrenom(profil)) {
     try { await afficher(profil); } catch (err) { afficherErreur(err); }
+    // Première visite : on explique le site avant tout le reste.
+    tutoSiPremiereVisite(profil);
+
+    // En arrière-plan, et sans bloquer l'affichage : si config.js a
+    // changé, on recopie la banque de questions dans la base, pour que
+    // l'ouverture automatique du 1er du mois utilise bien tes questions.
+    synchroniserBanque().catch(() => { /* sans conséquence */ });
   }
 }
 
 async function afficher(profil) {
-  const groupes = await mesGroupes();
+  const [groupes, ouvertes] = await Promise.all([mesGroupes(), editionsOuvertes()]);
   const prenom = profil?.prenom || '';
+
+  // Le questionnaire se remplit une seule fois, ici, pour tous les
+  // groupes à la fois. On met en avant le mois le plus récent.
+  const moisOuverts = [...new Set(ouvertes.map(e => e.mois))].sort().reverse();
+  const moisEnCours = moisOuverts[0] ?? null;
+  const envois = moisEnCours ? await mesEnvois(moisEnCours) : {};
 
   const adminGroupes  = groupes.filter(g => g.role === 'admin');
   const membreGroupes = groupes.filter(g => g.role !== 'admin');
@@ -55,7 +71,7 @@ async function afficher(profil) {
         </p>
         <ul class="liste-role">
           <li><strong>Inviter les copines</strong> par e-mail, et les retirer.</li>
-          <li><strong>Ouvrir l'édition du mois</strong> — sans ça, personne ne peut répondre.</li>
+          <li><strong>Ouvrir l'édition du mois.</strong> Sans ça, personne ne peut répondre.</li>
           <li><strong>Publier</strong> quand tu estimes qu'il y a assez de réponses : tout le groupe peut alors lire.</li>
           <li><strong>Nommer une co-admin</strong> pour t'aider à relancer et publier.</li>
           <li>Et comme tout le monde, <strong>répondre au questionnaire</strong>.</li>
@@ -95,6 +111,7 @@ async function afficher(profil) {
     <div class="page">
       <span class="surtitre">Bonjour ${txt(prenom)}</span>
       <h1 style="margin:4px 0 22px">Tes groupes</h1>
+      ${carteQuestionnaire(moisEnCours, ouvertes, envois)}
       ${barre}
       ${contenu}
       <div class="separateur">· · ·</div>
@@ -104,12 +121,25 @@ async function afficher(profil) {
           Un groupe par bande de copines. Elles ne voient que le leur.
           Tu en seras l'administratrice.
         </p>
-        <form id="form-groupe" class="rangee">
-          <input type="text" name="emoji" value="🎀" maxlength="4"
-                 style="width:70px;text-align:center" aria-label="Emoji">
-          <input type="text" name="nom" required placeholder="Les copines du lycée"
-                 style="flex:1;min-width:200px">
-          <button class="btn" type="submit">Créer</button>
+        <form id="form-groupe">
+          <label class="champ">
+            <span class="intitule">Son nom</span>
+            <input type="text" name="nom" required placeholder="Les copines du lycée">
+          </label>
+          <div class="champ">
+            <span class="intitule">Son emoji</span>
+            <span class="aide">C'est ce qu'on verra partout à côté du nom.</span>
+            <div class="palette-emojis" id="palette-groupe">
+              ${PALETTE_EMOJIS_GROUPE.map((e, i) => `
+                <button type="button" class="bouton-emoji ${i === 0 ? 'actif' : ''}"
+                        data-emoji="${txt(e)}">${e}</button>`).join('')}
+            </div>
+            <input type="text" name="emoji" value="🎀" maxlength="4" id="emoji-choisi"
+                   style="width:84px;text-align:center;margin-top:10px"
+                   aria-label="Emoji choisi, modifiable">
+            <span class="aide">Tu peux aussi en coller un autre ici.</span>
+          </div>
+          <button class="btn" type="submit">Créer le groupe</button>
         </form>
       </div>
     </div>`;
@@ -125,6 +155,20 @@ async function afficher(profil) {
         p.classList.toggle('cache', p.dataset.panneau !== cible));
     }));
 
+  // La palette coche l'emoji, et le champ reste modifiable à la main.
+  const champEmoji = $('#emoji-choisi');
+  $('#palette-groupe')?.querySelectorAll('.bouton-emoji').forEach(b =>
+    b.addEventListener('click', () => {
+      $('#palette-groupe').querySelectorAll('.bouton-emoji')
+        .forEach(o => o.classList.remove('actif'));
+      b.classList.add('actif');
+      champEmoji.value = b.dataset.emoji;
+    }));
+  champEmoji?.addEventListener('input', () => {
+    $('#palette-groupe').querySelectorAll('.bouton-emoji').forEach(o =>
+      o.classList.toggle('actif', o.dataset.emoji === champEmoji.value));
+  });
+
   $('#form-groupe').addEventListener('submit', async e => {
     e.preventDefault();
     const b = e.target.querySelector('button');
@@ -137,6 +181,71 @@ async function afficher(profil) {
       b.disabled = false;
     }
   });
+}
+
+/**
+ * La carte du haut : un seul questionnaire pour tous les groupes.
+ * C'est le point d'entrée du mois.
+ */
+function carteQuestionnaire(moisEnCours, ouvertes, envois) {
+  // Rien d'ouvert : on invite à ouvrir le mois en cours. Depuis cette
+  // version, n'importe quelle membre peut le faire.
+  if (!moisEnCours) {
+    return `
+      <div class="carte carte-questionnaire">
+        <div class="rangee espace" style="gap:18px">
+          <div style="min-width:0">
+            <span class="surtitre">Le questionnaire du mois</span>
+            <h2 style="margin:2px 0 6px;font-size:1.6rem">${txt(moisEnLettres(moisCourant()))}</h2>
+            <p class="discret" style="margin:0">
+              Pas encore ouvert. Tu peux l'ouvrir pour tes groupes, même ceux
+              que tu ne gères pas.
+            </p>
+          </div>
+          <a class="btn" href="repondre.html?mois=${encodeURIComponent(moisCourant())}">Ouvrir</a>
+        </div>
+      </div>`;
+  }
+
+  const duMois = ouvertes.filter(e => e.mois === moisEnCours);
+  const faits = duMois.filter(e => envois[e.id]?.envoyee).length;
+  const total = duMois.length;
+  const toutFait = faits === total;
+
+  const etat = toutFait
+    ? `Ta page est partie dans ${total === 1 ? 'ton groupe' : 'tes ' + total + ' groupes'}.`
+    : faits
+      ? `Déjà envoyée dans ${faits} groupe${faits > 1 ? 's' : ''} sur ${total}.`
+      : 'Tu remplis une seule fois, puis tu choisis à qui l\'envoyer.';
+
+  return `
+    <div class="carte carte-questionnaire">
+      <div class="rangee espace" style="gap:18px">
+        <div style="min-width:0">
+          <span class="surtitre">Le questionnaire du mois</span>
+          <h2 style="margin:2px 0 6px;font-size:1.6rem">${txt(moisEnLettres(moisEnCours))}</h2>
+          <p class="discret" style="margin:0">${txt(etat)}</p>
+        </div>
+        <a class="btn" href="repondre.html?mois=${encodeURIComponent(moisEnCours)}">
+          ${toutFait ? 'Modifier ma page' : (faits ? 'Continuer' : 'Remplir')}
+        </a>
+      </div>
+      ${total > 1 ? `
+      <div class="jauge" style="margin-top:18px">
+        <div class="jauge-remplie" style="width:${Math.round((faits / total) * 100)}%"></div>
+      </div>` : ''}
+    </div>
+    ${moisOuvertsRestants(ouvertes, moisEnCours)}`;
+}
+
+/** Les autres mois encore ouverts, s'il y en a (rattrapage). */
+function moisOuvertsRestants(ouvertes, moisEnCours) {
+  const autres = [...new Set(ouvertes.map(e => e.mois))].filter(m => m !== moisEnCours).sort().reverse();
+  if (!autres.length) return '';
+  return `<p class="discret" style="margin:-8px 0 22px">
+    Encore ouvert : ${autres.map(m =>
+      `<a href="repondre.html?mois=${encodeURIComponent(m)}">${txt(moisEnLettres(m))}</a>`).join(', ')}.
+  </p>`;
 }
 
 function grille(groupes, mention) {

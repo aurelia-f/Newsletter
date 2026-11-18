@@ -25,6 +25,21 @@ export function moisCourant() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
+/**
+ * Le mois courant et les `combien` mois précédents, du plus récent
+ * au plus ancien, au format AAAA-MM-01.
+ */
+export function derniersMois(combien = 3) {
+  const liste = [];
+  const d = new Date();
+  d.setDate(1);
+  for (let i = 0; i <= combien; i++) {
+    liste.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`);
+    d.setMonth(d.getMonth() - 1);
+  }
+  return liste;
+}
+
 export function initiale(personne) {
   const base = personne?.prenom || personne?.email || '?';
   return base.trim().charAt(0).toUpperCase();

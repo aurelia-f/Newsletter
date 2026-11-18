@@ -1,9 +1,10 @@
 // ==========================================================
-//  Page : profil.html — ma fiche
+//  Page : profil.html · ma fiche
 //  ?bienvenue=1 → version courte de première connexion
 // ==========================================================
 import { exigerSession, brancherEntete, afficherErreur,
          monProfil, majProfil, envoyerAvatar } from './db.js';
+import { montrerTuto } from './tuto.js';
 import { FETES } from './config.js';
 import { $, txt, alerte } from './ui.js';
 
@@ -113,12 +114,52 @@ async function afficher() {
                    value="${txt(profil?.ville ?? '')}" placeholder="Le Cap, Afrique du Sud">
           </label>
 
+          <label class="champ">
+            <span class="intitule">Ce que je fais</span>
+            <span class="aide">Métier, études, ou « je cherche encore ».</span>
+            <input type="text" name="occupation" maxlength="120"
+                   value="${txt(profil?.occupation ?? '')}"
+                   placeholder="Étudiante en informatique">
+          </label>
+
+          <label class="champ">
+            <span class="intitule">Des enfants ?</span>
+            <span class="aide">Leurs prénoms, leurs âges. Ou rien du tout.</span>
+            <input type="text" name="enfants" maxlength="140"
+                   value="${txt(profil?.enfants ?? '')}"
+                   placeholder="Deux : Jade (4 ans) et Noé (7 ans)">
+          </label>
+
+          <label class="champ">
+            <span class="intitule">Des animaux ?</span>
+            <span class="aide">On veut les noms. Et les photos, dans le questionnaire.</span>
+            <input type="text" name="animaux" maxlength="140"
+                   value="${txt(profil?.animaux ?? '')}"
+                   placeholder="Un chat, Plume">
+          </label>
+
+          <label class="champ">
+            <span class="intitule">Un truc que peu de gens savent sur moi</span>
+            <span class="aide">Petit, inutile, drôle. C'est le meilleur.</span>
+            <input type="text" name="anecdote" maxlength="200"
+                   value="${txt(profil?.anecdote ?? '')}"
+                   placeholder="J'ai nagé en compétition pendant quinze ans">
+          </label>
+
+          <label class="champ">
+            <span class="intitule">Ma phrase du moment</span>
+            <span class="aide">Une devise, une réplique, une chanson qui tourne.</span>
+            <input type="text" name="devise" maxlength="160"
+                   value="${txt(profil?.devise ?? '')}"
+                   placeholder="On verra bien">
+          </label>
+
           <fieldset class="champ sans-bordure">
             <legend class="intitule">Ce que je célèbre</legend>
             <span class="aide">
               Sert aux questions de saison : en décembre, l'une raconte son Noël,
-              l'autre son Aïd, une troisième sa fin d'année. Facultatif — sans
-              réponse, la question reste neutre.
+              l'autre son Aïd, une troisième sa fin d'année. C'est facultatif.
+              Sans réponse, la question reste neutre.
             </span>
             <div class="pastilles">
               ${FETES.map(f => `
@@ -140,7 +181,12 @@ async function afficher() {
           <button class="btn large" type="submit">Enregistrer</button>
         </form>
 
-        <p class="discret" style="margin-top:18px;text-align:center">
+        <div class="rangee" style="justify-content:center;margin-top:20px">
+          <button class="btn fil petit" type="button" id="btn-revoir-tuto">
+            Revoir la présentation du site
+          </button>
+        </div>
+        <p class="discret" style="margin-top:14px;text-align:center">
           Connectée avec ${txt(email)}
         </p>
       </div>
@@ -148,6 +194,7 @@ async function afficher() {
     </div>`;
 
   brancherPhoto();
+  $('#btn-revoir-tuto')?.addEventListener('click', () => montrerTuto({ force: true }));
 
   $('#form-profil').addEventListener('submit', async e => {
     e.preventDefault();
@@ -159,6 +206,11 @@ async function afficher() {
         prenom: e.target.prenom.value,
         date_naissance: e.target.date_naissance.value || null,
         ville: e.target.ville.value,
+        occupation: e.target.occupation.value,
+        enfants: e.target.enfants.value,
+        animaux: e.target.animaux.value,
+        anecdote: e.target.anecdote.value,
+        devise: e.target.devise.value,
         bio: e.target.bio.value,
         fetes: [...e.target.querySelectorAll('input[name=fetes]:checked')].map(c => c.value),
         avatar_url: avatarUrl,

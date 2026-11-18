@@ -6,6 +6,66 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY, RUBRIQUES, QUESTIONS_TOURNANTES,
          QUESTIONS_CHOIX, QUESTIONS_SAISON, QUESTION_FETE_NEUTRE,
          NB_QUESTIONS_TOURNANTES, NB_QUESTIONS_CHOIX } from './config.js';
 
+/* ---------- La banque de questions, recopiée dans la base ----------
+   L'ouverture automatique du 1er du mois se fait dans la base, qui ne
+   sait pas lire config.js. Elle a donc sa propre copie de la banque.
+   config.js reste LE fichier à modifier : dès qu'une administratrice
+   ouvre le site, on compare une empreinte et on recopie si besoin. */
+
+function banqueDepuisConfig() {
+  const lignes = [];
+  RUBRIQUES.forEach((q, i) => lignes.push({ categorie: 'rubrique', ordre: i, mois: null, question: q }));
+  QUESTIONS_TOURNANTES.forEach((texte, i) =>
+    lignes.push({ categorie: 'tournante', ordre: i, mois: null, question: { texte } }));
+  QUESTIONS_CHOIX.forEach((q, i) => lignes.push({ categorie: 'choix', ordre: i, mois: null, question: q }));
+  for (const [m, q] of Object.entries(QUESTIONS_SAISON))
+    lignes.push({ categorie: 'saison', ordre: 0, mois: Number(m), question: q });
+  lignes.push({ categorie: 'fete', ordre: 0, mois: null, question: QUESTION_FETE_NEUTRE });
+  return lignes;
+}
+
+/** Une empreinte courte et stable du contenu de la banque. */
+function empreinte(texte) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < texte.length; i++) {
+    h ^= texte.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16) + '-' + texte.length;
+}
+
+/**
+ * Recopie la banque dans la base si config.js a changé.
+ * Sans effet si on n'est pas administratrice : les règles de
+ * sécurité refusent l'écriture, et ce n'est pas grave.
+ */
+export async function synchroniserBanque() {
+  const lignes = banqueDepuisConfig();
+  const signature = empreinte(JSON.stringify(lignes) + '|' +
+                              NB_QUESTIONS_TOURNANTES + '|' + NB_QUESTIONS_CHOIX);
+
+  const { data: deja } = await sb.from('reglages')
+    .select('valeur').eq('cle', 'empreinte_banque').maybeSingle();
+  if (deja?.valeur === signature) return false;
+
+  const { error: eSuppr } = await sb.from('banque').delete().gt('id', 0);
+  if (eSuppr) return false;          // pas administratrice : on s'arrête là
+
+  // Par paquets, pour ne pas envoyer une requête énorme.
+  for (let i = 0; i < lignes.length; i += 25) {
+    const { error } = await sb.from('banque').insert(lignes.slice(i, i + 25));
+    if (error) throw error;
+  }
+
+  await sb.from('reglages').upsert([
+    { cle: 'empreinte_banque', valeur: signature },
+    { cle: 'nb_tournantes',    valeur: NB_QUESTIONS_TOURNANTES },
+    { cle: 'nb_choix',         valeur: NB_QUESTIONS_CHOIX },
+  ], { onConflict: 'cle' });
+
+  return true;
+}
+
 // Toutes les tables de cette appli vivent dans le schéma `newsletter`,
 // ce qui permet d'héberger d'autres applis dans le même projet Supabase.
 // À faire une fois côté Supabase : Settings > Data API > Exposed schemas,
@@ -50,7 +110,8 @@ export async function monProfil() {
     const { data: cree } = await sb.from('profiles')
       .insert({ id: session.user.id, email: session.user.email })
       .select().maybeSingle();
-    return cree ?? { id: session.user.id, email: session.user.email, prenom: null };
+    return cree ?? { id: session.user.id, email: session.user.email, prenom: null,
+                     fetes: [], tuto_vu: false };
   }
   return data;
 }
@@ -65,10 +126,14 @@ export async function majProfil(champs) {
   if (!session) return;
 
   const propre = {};
-  for (const cle of ['prenom', 'avatar_url', 'date_naissance', 'bio', 'ville', 'fetes']) {
+  for (const cle of ['prenom', 'avatar_url', 'date_naissance', 'bio', 'ville',
+                     'occupation', 'enfants', 'animaux', 'anecdote', 'devise',
+                     'fetes', 'tuto_vu']) {
     if (cle in champs) {
       const v = champs[cle];
       if (cle === 'fetes') propre.fetes = Array.isArray(v) ? v : [];
+      else if (cle === 'tuto_vu') propre.tuto_vu = !!v;
+      else if (cle === 'tuto_vu') propre.tuto_vu = !!v;
       else propre[cle] = typeof v === 'string' ? (v.trim() || null) : (v ?? null);
     }
   }
@@ -84,6 +149,9 @@ export async function majProfil(champs) {
 
 /** Compatibilité avec l'ancien code. */
 export const majPrenom = prenom => majProfil({ prenom });
+
+/** La présentation a été vue : on ne la repropose plus d'elle-même. */
+export const marquerTutoVu = () => majProfil({ tuto_vu: true });
 
 /** La fiche est-elle remplie ? Sert à poser la question à la 1re connexion. */
 export function profilIncomplet(profil) {
@@ -260,9 +328,18 @@ export function questionsDuMois(mois) {
   return [...RUBRIQUES, ...saison, ...fete, ...cocher, ...tournantes];
 }
 
+/**
+ * Ouvre l'édition d'un mois : le mois courant, ou un mois passé qui
+ * n'a pas encore eu son numéro (on démarre souvent la newsletter en
+ * novembre en voulant quand même faire octobre).
+ */
 export async function ouvrirEdition(groupeId, mois) {
   const precedentes = await editionsDuGroupe(groupeId);
-  const numero = precedentes.length + 1;
+
+  // Le numéro suit l'ordre des mois, pas l'ordre de création : si on
+  // ouvre octobre après novembre, octobre devient le numéro 1.
+  const numero = precedentes.filter(e => e.mois < mois).length + 1;
+
   const { data, error } = await sb
     .from('editions')
     .insert({
@@ -275,7 +352,25 @@ export async function ouvrirEdition(groupeId, mois) {
     .select()
     .single();
   if (error) throw error;
+
+  await renumeroter(groupeId);
   return data;
+}
+
+/** Renumérote les éditions d'un groupe dans l'ordre chronologique. */
+export async function renumeroter(groupeId) {
+  const { data, error } = await sb
+    .from('editions')
+    .select('id, numero, mois')
+    .eq('groupe_id', groupeId)
+    .order('mois', { ascending: true });
+  if (error) return;
+
+  for (const [i, e] of (data ?? []).entries()) {
+    if (e.numero !== i + 1) {
+      await sb.from('editions').update({ numero: i + 1 }).eq('id', e.id);
+    }
+  }
 }
 
 export async function publierEdition(id) {
@@ -318,7 +413,7 @@ export async function enregistrerReponse(editionId, contenu, medias, envoyee) {
 export async function reponsesPubliees(editionId) {
   const { data, error } = await sb
     .from('reponses')
-    .select('*, auteure:profiles(id, prenom, email, avatar_url, ville)')
+    .select('*, auteure:profiles(id, prenom, email, avatar_url, ville, occupation, devise)')
     .eq('edition_id', editionId)
     .eq('envoyee', true);
   if (error) throw error;
@@ -334,15 +429,107 @@ export async function compterReponses(editionId) {
   return count ?? 0;
 }
 
+/* ---------- Le brouillon mensuel, commun à tous les groupes ---------- */
+
+/** Toutes les éditions encore ouvertes, dans tous mes groupes. */
+export async function editionsOuvertes() {
+  const groupes = await mesGroupes();
+  if (!groupes.length) return [];
+
+  const { data, error } = await sb
+    .from('editions')
+    .select('*, groupe:groupes(id, nom, emoji)')
+    .in('groupe_id', groupes.map(g => g.id))
+    .eq('statut', 'ouverte')
+    .order('mois', { ascending: false });
+  if (error) throw error;
+
+  const parGroupe = new Map(groupes.map(g => [g.id, g]));
+  return (data ?? []).map(e => ({ ...e, role: parGroupe.get(e.groupe_id)?.role ?? 'membre' }));
+}
+
+/** Mon brouillon du mois, s'il existe. */
+export async function monBrouillon(mois) {
+  const session = await sessionActuelle();
+  const { data } = await sb
+    .from('brouillons')
+    .select('*')
+    .eq('profile_id', session.user.id)
+    .eq('mois', mois)
+    .maybeSingle();
+  return data;
+}
+
+/** Enregistre mon brouillon du mois. Strictement privé. */
+export async function enregistrerBrouillon(mois, contenu, medias) {
+  const session = await sessionActuelle();
+  const { error } = await sb.from('brouillons').upsert({
+    profile_id: session.user.id,
+    mois,
+    contenu,
+    medias,
+    maj_le: new Date().toISOString(),
+  }, { onConflict: 'profile_id,mois' });
+  if (error) throw error;
+}
+
+/** Les éditions d'un mois auxquelles j'ai déjà envoyé ma page. */
+export async function mesEnvois(mois) {
+  const ouvertes = await editionsOuvertes();
+  const duMois = ouvertes.filter(e => e.mois === mois);
+  if (!duMois.length) return {};
+
+  const session = await sessionActuelle();
+  const { data } = await sb
+    .from('reponses')
+    .select('edition_id, envoyee, maj_le')
+    .in('edition_id', duMois.map(e => e.id))
+    .eq('profile_id', session.user.id);
+
+  const parEdition = {};
+  for (const r of data ?? []) parEdition[r.edition_id] = r;
+  return parEdition;
+}
+
+/**
+ * Ouvre le questionnaire du mois pour un groupe, s'il n'existe pas
+ * encore. N'importe quelle membre du groupe peut le faire : personne
+ * n'attend après personne. Publier, en revanche, reste réservé aux
+ * administratrices.
+ */
+export async function ouvrirPourGroupe(groupeId, mois) {
+  const groupe = (await mesGroupes()).find(g => g.id === groupeId);
+  if (!groupe) return null;
+
+  const { data: existante } = await sb
+    .from('editions')
+    .select('*, groupe:groupes(id, nom, emoji)')
+    .eq('groupe_id', groupeId)
+    .eq('mois', mois)
+    .maybeSingle();
+  if (existante) return existante;
+
+  return await ouvrirEdition(groupeId, mois);
+}
+
+/** Ancien nom, gardé pour ne rien casser. */
+export const ouvrirSiAdmin = ouvrirPourGroupe;
+
 /* ---------- Les questions posées par les copines ---------- */
 
-/** Toutes les questions posées dans une édition. */
+/**
+ * Les questions posées dans une édition, ou dans plusieurs d'un coup
+ * (le formulaire unique doit rassembler celles de tous les groupes).
+ */
 export async function questionsPosees(editionId) {
+  const ids = Array.isArray(editionId) ? editionId : [editionId];
+  if (!ids.length) return [];
+
   const { data, error } = await sb
     .from('questions_posees')
     .select('*, auteur:profiles!questions_posees_auteur_id_fkey(id, prenom, avatar_url),'
           + ' destinataire:profiles!questions_posees_destinataire_id_fkey(id, prenom, avatar_url)')
-    .eq('edition_id', editionId)
+    .in('edition_id', ids)
     .order('cree_le');
   if (error) throw error;
   return data ?? [];
@@ -377,6 +564,8 @@ export async function retirerQuestion(id) {
 export async function mesQuestionsARepondre(editionId) {
   const session = await sessionActuelle();
   const toutes = await questionsPosees(editionId);
+  // Celles posées à tout le groupe par quelqu'un d'autre, et celles
+  // qui m'ont été adressées personnellement.
   return toutes.filter(q =>
     q.destinataire_id
       ? q.destinataire_id === session.user.id

@@ -1,5 +1,5 @@
 // ==========================================================
-//  Page : index.html — connexion par lien magique
+//  Page : index.html · connexion par lien magique
 // ==========================================================
 import { sb, configOk, sessionActuelle, envoyerLienMagique } from './db.js';
 import { NOM_DU_SITE, BASELINE } from './config.js';
@@ -68,7 +68,7 @@ function afficher() {
       $('#retour').innerHTML = `
         <div class="message ok" style="margin-top:16px">
           C'est parti ! Un lien vient de partir vers ${txt(email)}.
-          Ouvre ta boîte mail et clique dessus — pense à regarder dans les spams.
+          Ouvre ta boîte mail et clique dessus. Pense à regarder dans les spams.
         </div>`;
       e.target.classList.add('cache');
     } catch (err) {

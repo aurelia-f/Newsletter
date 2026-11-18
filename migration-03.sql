@@ -1,5 +1,5 @@
 -- ============================================================
---  Entre Nous — migration 03
+--  Entre Nous : migration 03
 --  Questions posées par les copines, réactions, fêtes célébrées
 --  À coller dans Supabase > SQL Editor > New query > Run,
 --  après migration-02.sql. Relançable sans risque.

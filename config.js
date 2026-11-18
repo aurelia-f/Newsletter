@@ -1,5 +1,5 @@
 // ==========================================================
-//  Réglages — c'est LE seul fichier que tu dois modifier.
+//  Réglages : c'est LE seul fichier que tu dois modifier.
 // ==========================================================
 
 // 1. Tes clés Supabase (Project Settings > Data API).
@@ -14,7 +14,7 @@ export const NOM_DU_SITE = 'Entre Nous';
 export const BASELINE = 'Les nouvelles de nos vies, une fois par mois.';
 
 // ==========================================================
-//  3. LES RUBRIQUES FIXES — le squelette de chaque numéro
+//  3. LES RUBRIQUES FIXES : le squelette de chaque numéro
 // ==========================================================
 //  Types disponibles :
 //    'court'   → une ligne
@@ -92,7 +92,7 @@ export const RUBRIQUES = [
 ];
 
 // ==========================================================
-//  4. LES QUESTIONS SURPRISES — à rédiger
+//  4. LES QUESTIONS SURPRISES : à rédiger
 // ==========================================================
 //  Le site en tire quelques-unes au hasard à chaque édition.
 //  Formulations mixtes, rien qui suppose un genre.
@@ -130,7 +130,7 @@ export const QUESTIONS_TOURNANTES = [
 ];
 
 // ==========================================================
-//  5. LES QUESTIONS À COCHER — rapides, drôles, comparables
+//  5. LES QUESTIONS À COCHER : rapides, drôles, comparables
 // ==========================================================
 //  Le site en tire quelques-unes au hasard à chaque édition.
 //  Ce sont elles qui alimentent les pages de résultats.
@@ -175,26 +175,26 @@ export const QUESTIONS_CHOIX = [
 ];
 
 // ==========================================================
-//  6. LES QUESTIONS DE SAISON — selon le mois
+//  6. LES QUESTIONS DE SAISON : selon le mois
 // ==========================================================
 //  Posées à tout le monde, quelles que soient les croyances.
 export const QUESTIONS_SAISON = {
   1:  { id: 's_janvier',   type: 'long', intitule: 'Ta résolution de janvier, et ton pronostic honnête sur sa survie ?' },
-  2:  { id: 's_fevrier',   type: 'long', intitule: 'Février, mois de l\'amour : raconte-nous une histoire d\'amour — la tienne, celle d\'un·e ami·e, ou celle de tes grands-parents.' },
+  2:  { id: 's_fevrier',   type: 'long', intitule: 'Février, mois de l\'amour : raconte-nous une histoire d\'amour. La tienne, celle d\'un·e ami·e, ou celle de tes grands-parents.' },
   3:  { id: 's_mars',      type: 'long', intitule: 'Qu\'est-ce que tu recommences, ou qu\'est-ce que tu arrêtes, ce trimestre ?' },
   4:  { id: 's_avril',     type: 'long', intitule: 'La dernière fois que tu t\'es fait avoir, ou que tu as bien eu quelqu\'un ?' },
   5:  { id: 's_mai',       type: 'long', intitule: 'Ton prochain jour de congé, tu en fais quoi ?' },
   6:  { id: 's_juin',      type: 'long', intitule: 'La moitié de l\'année est passée : qu\'est-ce que tu gardes, qu\'est-ce que tu jettes ?' },
   7:  { id: 's_juillet',   type: 'long', intitule: 'Ton plan de l\'été, même modeste, même inavouable ?' },
   8:  { id: 's_aout',      type: 'long', intitule: 'Le meilleur souvenir d\'été de ta vie, toutes années confondues ?' },
-  9:  { id: 's_septembre', type: 'long', intitule: 'Ta rentrée en un mot et en une photo — à quoi ressemble ta vie en ce moment ?' },
+  9:  { id: 's_septembre', type: 'long', intitule: 'Ta rentrée en un mot et en une photo. À quoi ressemble ta vie en ce moment ?' },
   10: { id: 's_octobre',   type: 'long', intitule: 'De quoi tu as eu peur cette année, et est-ce que ça s\'est réalisé ?' },
   11: { id: 's_novembre',  type: 'long', intitule: 'Trois choses pour lesquelles tu es sincèrement reconnaissant·e en ce moment ?' },
   12: { id: 's_decembre',  type: 'long', intitule: 'Ton bilan de l\'année en trois lignes : le meilleur, le pire, la surprise.' },
 };
 
 // ==========================================================
-//  7. LES FÊTES — pour que la question de saison soit juste
+//  7. LES FÊTES : pour que la question de saison soit juste
 // ==========================================================
 //  Chacune indique dans son profil ce qu'elle célèbre, et reçoit
 //  SA version de la question. Dans le même numéro, l'une raconte
@@ -241,6 +241,20 @@ export const QUESTION_FETE_NEUTRE = {
 export const NB_QUESTIONS_TOURNANTES = 2;  // questions surprises par édition
 export const NB_QUESTIONS_CHOIX      = 2;  // questions à cocher par édition
 export const NB_QUESTIONS_EXPRESS    = 5;  // taille du mode « 5 minutes »
+
+// Les questions du mode « 5 minutes ».
+// En plus du repère `express: true` ci-dessus, on garde la liste des
+// identifiants : les numéros ouverts avant l'ajout de ce repère n'en
+// ont pas, et le mode doit marcher pour eux aussi.
+export const IDS_EXPRESS = ['humeur', 'resume', 'potin', 'emojis', 'photos'];
+
+// Les emojis proposés pour nommer un groupe.
+export const PALETTE_EMOJIS_GROUPE = [
+  '🎀','💌','🫶','💖','✨','🌸','🌷','🌻','🍒','🍓',
+  '🏡','🏫','🎓','👯','🧋','☕','🍸','🍕','🎉','🎂',
+  '🌊','⛰️','🧗','🏄','✈️','🚐','🏖️','🌍','🗼','🎪',
+  '🐱','🐶','🦋','🐝','🦆','🌙','⭐','🔥','🧶','📻',
+];
 
 // La palette proposée pour « mon mois en trois emojis ».
 export const PALETTE_EMOJIS = [

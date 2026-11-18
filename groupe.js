@@ -1,11 +1,12 @@
 // ==========================================================
-//  Page : groupe.html?id=… — éditions, membres, administration
+//  Page : groupe.html?id=… · éditions, membres, administration
 // ==========================================================
 import { exigerSession, brancherEntete, afficherErreur, exigerPrenom,
          mesGroupes, editionsDuGroupe, membresDuGroupe, compterReponses,
          ouvrirEdition, publierEdition, inviter, retirerMembre,
          changerRole, mesQuestionsARepondre, maReponse } from './db.js';
-import { $, txt, moisEnLettres, moisCourant, initiale, messageVide, alerte } from './ui.js';
+import { $, txt, moisEnLettres, moisCourant, derniersMois, initiale,
+         messageVide, alerte } from './ui.js';
 
 const vue = $('#vue');
 const groupeId = new URLSearchParams(location.search).get('id');
@@ -38,7 +39,7 @@ async function afficher() {
 
   // Pour les éditions encore ouvertes : où j'en suis, et si des questions
   // sont arrivées depuis que j'ai envoyé ma page. C'est la relance, à
-  // l'intérieur de l'appli — les vrais mails viendront plus tard.
+  // l'intérieur de l'appli. Les vrais mails viendront plus tard.
   const monEtat = {};
   await Promise.all(editions
     .filter(e => e.statut === 'ouverte')
@@ -59,9 +60,11 @@ async function afficher() {
   const listeEditions = editions.length
     ? editions.map(ed => {
         const publiee = ed.statut === 'publiee';
+        // Une édition publiée se lit. Une édition ouverte se remplit
+        // depuis le questionnaire commun, pas groupe par groupe.
         const lien = publiee
           ? 'edition.html?id=' + encodeURIComponent(ed.id)
-          : 'repondre.html?id=' + encodeURIComponent(ed.id);
+          : 'repondre.html?mois=' + encodeURIComponent(ed.mois);
         return `<a class="carte cliquable" href="${lien}"
                    style="text-decoration:none;display:block;margin-bottom:14px">
           <div class="rangee espace">
@@ -82,23 +85,37 @@ async function afficher() {
     : messageVide('📬', 'Aucune édition', estAdmin
         ? 'Ouvre la première ci-dessous.' : 'Patience, ça arrive.');
 
-  const dejaCeMois = editions.some(e => e.mois === moisCourant());
+  // Les mois qu'on peut encore ouvrir : le mois courant et les trois
+  // précédents, sauf ceux qui ont déjà eu leur numéro. On démarre
+  // souvent la newsletter en novembre en voulant quand même faire
+  // octobre. Le numéro se remet dans l'ordre chronologique tout seul.
+  const moisPris = new Set(editions.map(e => e.mois));
+  const moisLibres = derniersMois(3).filter(m => !moisPris.has(m));
 
   const blocAdmin = estAdmin ? `
     <div class="separateur">· · ·</div>
     <div class="carte">
       <h3>Administration</h3>
 
-      ${dejaCeMois ? '' : `
+      ${moisLibres.length ? `
       <p class="discret" style="margin:10px 0 14px">
-        Ouvre l'édition de ${txt(moisEnLettres(moisCourant()))} pour que tout
-        le monde puisse commencer à répondre.
+        ${moisLibres.includes(moisCourant())
+          ? `Ouvre une édition pour que tout le monde puisse commencer à répondre.${
+              moisLibres.length > 1 ? ' Tu peux aussi rattraper un mois passé.' : ''}`
+          : 'Le mois en cours a déjà son numéro. Tu peux encore rattraper un mois passé.'}
       </p>
-      <button class="btn" id="btn-ouvrir">Ouvrir l'édition de ${txt(moisEnLettres(moisCourant()))}</button>`}
+      <div class="rangee">
+        <select id="choix-mois" aria-label="Mois à ouvrir" style="flex:1;min-width:180px">
+          ${moisLibres.map(m => `
+            <option value="${txt(m)}">${txt(moisEnLettres(m))}${
+              m === moisCourant() ? ' (ce mois-ci)' : ''}</option>`).join('')}
+        </select>
+        <button class="btn" id="btn-ouvrir">Ouvrir cette édition</button>
+      </div>` : ''}
 
       ${editions.filter(e => e.statut === 'ouverte').map(e => `
         <div class="rangee espace" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--creme-fonce)">
-          <span>Numéro ${e.numero} — ${txt(moisEnLettres(e.mois))}</span>
+          <span>Numéro ${e.numero} · ${txt(moisEnLettres(e.mois))}</span>
           <button class="btn petit" data-publier="${txt(e.id)}">Publier maintenant</button>
         </div>`).join('')}
 
@@ -107,7 +124,7 @@ async function afficher() {
         ${membres.map(m => ligneMembre(m, groupe)).join('')}
       </div>
       <p class="discret" style="margin-top:10px">
-        Une co-administratrice peut inviter, retirer, ouvrir et publier —
+        Une co-administratrice peut inviter, retirer, ouvrir et publier,
         tout comme toi. Elle ne peut ni supprimer le groupe, ni te retirer.
       </p>
 
@@ -145,9 +162,14 @@ async function afficher() {
     </div>`;
 
   $('#btn-ouvrir')?.addEventListener('click', async e => {
+    const mois = $('#choix-mois')?.value || moisCourant();
     e.target.disabled = true;
-    try { await ouvrirEdition(groupeId, moisCourant()); await afficher(); }
-    catch (err) { alerte(vue.querySelector('.page'), 'erreur', err.message); }
+    try { await ouvrirEdition(groupeId, mois); await afficher(); }
+    catch (err) {
+      alerte(vue.querySelector('.page'), 'erreur',
+        err.code === '23505' ? 'Ce mois a déjà son numéro.' : err.message);
+      e.target.disabled = false;
+    }
   });
 
   vue.querySelectorAll('[data-publier]').forEach(b =>

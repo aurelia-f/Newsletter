@@ -1,5 +1,5 @@
 -- ============================================================
---  Entre Nous — newsletter privée entre copines
+--  Entre Nous : newsletter privée entre copines
 --  Schéma Supabase : tables, sécurité (RLS) et stockage
 --  À coller dans Supabase > SQL Editor > New query > Run
 -- ============================================================
@@ -100,7 +100,7 @@ returns setof uuid
 language sql
 security definer
 stable
-set search_path = public
+set search_path = newsletter, public
 as $$
   select groupe_id from membres where profile_id = auth.uid();
 $$;
@@ -111,7 +111,7 @@ returns setof uuid
 language sql
 security definer
 stable
-set search_path = public
+set search_path = newsletter, public
 as $$
   select groupe_id from membres
   where profile_id = auth.uid() and role = 'admin';
@@ -124,7 +124,7 @@ create or replace function gerer_nouvel_utilisateur()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = newsletter, public
 as $$
 begin
   insert into profiles (id, email, prenom)

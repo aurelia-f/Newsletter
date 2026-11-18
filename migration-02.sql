@@ -1,5 +1,5 @@
 -- ============================================================
---  Entre Nous — migration 02
+--  Entre Nous : migration 02
 --  Fiche profil, co-administratrices, protections
 --  À coller dans Supabase > SQL Editor > New query > Run.
 --  Relançable autant de fois que tu veux sans rien casser.
@@ -90,7 +90,7 @@ $$;
 
 -- Garde-fou sur les changements de rôle. Un trigger plutôt
 -- qu'une règle RLS, parce qu'il faut comparer l'ancien et le
--- nouveau rôle — ce que RLS ne sait pas faire.
+-- nouveau rôle, ce que RLS ne sait pas faire.
 create or replace function proteger_role_membre()
 returns trigger
 language plpgsql
@@ -130,8 +130,8 @@ create trigger on_membre_role_change
 -- 4. RÈGLES DE SÉCURITÉ MISES À JOUR
 -- ------------------------------------------------------------
 
--- Modifier une ligne de membre : son propre prénom, ou — si on
--- est admin du groupe — le rôle d'une copine. Le trigger
+-- Modifier une ligne de membre : son propre prénom, ou, si on
+-- est admin du groupe, le rôle d'une copine. Le trigger
 -- ci-dessus empêche de se nommer admin toute seule.
 drop policy if exists "admin modifie un membre" on membres;
 drop policy if exists "modifier un membre" on membres;

@@ -1,5 +1,5 @@
 // ==========================================================
-//  Page : edition.html?id=… — le magazine
+//  Page : edition.html?id=… · le magazine
 // ==========================================================
 import { exigerSession, brancherEntete, afficherErreur,
          edition, reponsesPubliees, questionsPosees, membresDuGroupe,
@@ -28,7 +28,7 @@ async function afficher() {
     editionIlYaUnAn(ed.groupe.id, ed.mois),
   ]);
 
-  document.title = `Entre Nous — ${moisEnLettres(ed.mois)}`;
+  document.title = `Entre Nous · ${moisEnLettres(ed.mois)}`;
 
   const moisDuNumero = Number(String(ed.mois).slice(5, 7));
 
@@ -91,7 +91,9 @@ function article(r, ed, posees, reactions) {
       <span class="pastille">${vignette}</span>
       <div>
         <h2 style="font-size:1.4rem">${txt(nom)}</h2>
-        ${r.auteure?.ville ? `<p class="discret" style="margin:0">${txt(r.auteure.ville)}</p>` : ''}
+        ${r.auteure?.ville || r.auteure?.occupation ? `<p class="discret" style="margin:0">${
+          [r.auteure.occupation, r.auteure.ville].filter(Boolean).map(txt).join(' · ')}</p>` : ''}
+        ${r.auteure?.devise ? `<p class="devise">« ${txt(r.auteure.devise)} »</p>` : ''}
       </div>
     </div>
     ${rubriques}
@@ -294,7 +296,7 @@ function pageIlYaUnAn(bloc) {
       <div class="rubrique">
         <div class="intitule">${txt(choisie.intitule)}</div>
         <p class="citation">${txt(choisie.texte)}</p>
-        <p class="discret" style="margin-top:6px">— ${txt(choisie.nom)}, il y a un an</p>
+        <p class="discret" style="margin-top:6px">${txt(choisie.nom)}, il y a un an</p>
       </div>
       <a class="discret no-print" href="edition.html?id=${encodeURIComponent(bloc.edition.id)}">
         Relire tout le numéro de l'an dernier →
